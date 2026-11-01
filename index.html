@@ -325,7 +325,8 @@ h1, h2, h3 { text-wrap: balance; }
 @media (max-width: 980px) {
   .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); border-top: 3px solid var(--red); background: var(--slab); }
   .tab { appearance: none; display: grid; justify-items: center; gap: 3px; padding: 2px 2px 3px; border: 0; background: none; color: var(--slab-dim); font: 800 12.5px/1.05 var(--f-display); letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .tab i { display: grid; place-items: center; width: 54px; height: 30px; border-radius: 2px; transition: background 0.2s; }
+  .tab i { position: relative; display: grid; place-items: center; width: min(54px, 100%); height: 30px; border-radius: 2px; transition: background 0.2s; }
+  .tab-badge { position: absolute; top: -4px; right: max(0px, calc(50% - 25px)); min-width: 18px; height: 18px; padding: 0 4px; border: 2px solid var(--slab); border-radius: 9px; background: var(--gold); color: #1c1a16; font: 800 10.5px/14px var(--f-body); letter-spacing: 0; text-align: center; }
   .tab svg { width: 22px; height: 22px; fill: currentColor; }
   .tab[aria-current] { color: var(--on-slab); }
   .tab[aria-current] i { background: var(--red); color: var(--on-red); }
@@ -347,6 +348,9 @@ h1, h2, h3 { text-wrap: balance; }
 .mapctl .zloc { margin-top: 4px; display: grid; place-items: center; }
 .mapctl .zloc svg { width: 19px; height: 19px; }
 .mapctl .zloc[aria-pressed="true"] { color: var(--me); }
+.mapctl .zgrp[hidden] { display: none; }
+.mapctl .zgrp svg { width: 21px; height: 21px; fill: currentColor; }
+.mapctl .zgrp[aria-pressed="true"] { border-color: var(--red); background: var(--red); color: var(--on-red); }
 .toast a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 .recenter { position: absolute; right: 56px; top: 72px; z-index: 3; height: 38px; padding: 0 13px; font: 900 15px/1 var(--f-display); letter-spacing: 0.05em; text-transform: uppercase; }
 .pickbar { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); z-index: 7; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 20px); padding: 7px 7px 7px 15px; border-radius: 3px; background: var(--ink); color: var(--bg); font-size: 13.5px; box-shadow: var(--shadow); white-space: nowrap; }
@@ -465,6 +469,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .lightbox figcaption a { color: inherit; }
 .lb-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
 .lightbox .btn { background: transparent; color: var(--on-overlay); border-color: currentColor; }
+.lightbox .btn:disabled { opacity: 0.6; cursor: progress; }
+.lightbox video { width: 100%; height: 100%; min-height: 0; object-fit: contain; background: #000; }
+.lb-nav { position: absolute; top: 50%; z-index: 2; display: grid; place-items: center; width: 46px; height: 46px; margin-top: -46px; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.5); color: #fff; cursor: pointer; }
+.lb-nav[hidden] { display: none; }
+.lb-nav svg { width: 24px; height: 24px; }
+.lb-prev { left: max(8px, env(safe-area-inset-left, 0px)); }
+.lb-next { right: max(8px, env(safe-area-inset-right, 0px)); }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 70; transform: translateX(-50%); width: max-content; max-width: min(92vw, 440px); padding: 10px 16px; border-radius: 3px; border-left: 6px solid var(--red); background: var(--ink); color: var(--bg); font-size: 13.5px; line-height: 1.4; box-shadow: var(--shadow); }
 
 /* map layers */
@@ -920,6 +931,53 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .df-m.is-on { border: 1.5px solid var(--mc); background: var(--mc); color: var(--on-mc); }
 /* group photos still on the phone, and those still loading */
 .thumb { position: relative; }
+/* the group: positions, what's new, sending */
+.grp-part { margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed var(--line); }
+.grp-sub { margin: 0 0 8px; font: 800 13px/1.2 var(--f-display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); }
+.grp-part .btn-row { margin-top: 0; }
+.grp-part .grp-names { margin-top: 10px; }
+.grp-part .grp-note { margin-top: 8px; }
+.grp-name small { margin-left: 2px; font: 600 12.5px/1 var(--f-body); color: var(--ink-3); }
+.grp-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; font-size: 14.5px; line-height: 1.4; }
+.grp-line .grp-sync { font-size: 14px; }
+.grp-live { flex: none; width: 10px; height: 10px; margin-right: 2px; border-radius: 50%; background: var(--red); animation: grp-live 1.6s ease-out infinite; }
+@keyframes grp-live { 0% { box-shadow: 0 0 0 0 rgb(200 36 27 / 0.55); } 100% { box-shadow: 0 0 0 9px rgb(200 36 27 / 0); } }
+.grp-news { list-style: none; display: grid; gap: 2px; margin: 0 -6px; padding: 0; }
+.grp-new { appearance: none; display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; padding: 6px; border: 0; border-radius: 2px; background: none; color: var(--ink); font: 400 14.5px/1.35 var(--f-body); text-align: left; cursor: pointer; }
+.grp-new:hover { background: var(--surface-2); }
+.grp-new-t { display: grid; gap: 1px; min-width: 0; }
+.grp-new-t small { font-size: 12.5px; color: var(--ink-3); }
+.grp-news .is-new .grp-new-t > span { font-weight: 600; }
+.grp-news .is-new .grp-new-t small::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--red); vertical-align: 1px; }
+.grp-feed > .grp-sync { margin-top: 6px; font-size: 13.5px; }
+.grp-seg { display: inline-flex; flex-wrap: wrap; border: 1.5px solid var(--rule); border-radius: 3px; overflow: hidden; }
+.grp-seg button { appearance: none; padding: 9px 13px 8px; border: 0; border-left: 1.5px solid var(--rule); background: var(--bg); color: var(--ink); font: 800 14px/1.1 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.grp-seg button:first-child { border-left: 0; }
+.grp-seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.df-item.is-flash { animation: df-flash 2.4s ease-out; }
+@keyframes df-flash { 0%, 35% { box-shadow: 0 0 0 4px var(--gold); } 100% { box-shadow: 0 0 0 0 transparent; } }
+/* the others on the map */
+.fr-mk { cursor: pointer; }
+.fr-hit { fill: transparent; }
+.fr-dot { fill: var(--mc); stroke: #ffffff; stroke-width: 2.5px; }
+.fr-ini { font: 800 11px/1 var(--f-body); fill: var(--on-mc); text-anchor: middle; pointer-events: none; }
+.fr-name { font-size: 11.5px; font-weight: 700; fill: var(--ink); paint-order: stroke; stroke: var(--map-halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.fr-mk.is-old .fr-dot { fill-opacity: 0.5; stroke-dasharray: 3 2.5; }
+.fr-mk:focus { outline: none; }
+.fr-mk:focus-visible .fr-dot { stroke: var(--focus); stroke-width: 3.5px; }
+.fr-title { display: flex; align-items: center; gap: 10px; }
+/* the album */
+.alb-filters { display: grid; gap: 8px; margin: -6px 0 6px; }
+.alb-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.alb-chip { padding: 5px 11px; cursor: pointer; }
+.alb-chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.alb-day { margin-top: 20px; }
+.alb-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0 0 8px; font: 900 23px/1.05 var(--f-display); letter-spacing: 0.03em; text-transform: uppercase; }
+.alb-h small { font: 500 13px/1.3 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--ink-3); }
+.alb-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.alb-empty { max-width: 62ch; }
+.alb-empty .btn-row { margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .grp-live, .df-item.is-flash { animation: none; } }
 .thumb.is-pending img { opacity: 0.8; }
 .thumb-wait { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--photo-chip); color: var(--on-photo); }
 .thumb-wait svg { width: 14px; height: 14px; }
@@ -1897,8 +1955,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 </nav>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-label="Photo" hidden>
-  <figure><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
-  <div class="lb-actions"><a class="btn" id="lb-open" href="#" target="_blank" rel="noopener noreferrer" hidden>Original dans Google Drive</a><button type="button" class="btn" id="lb-del" hidden>Supprimer la photo</button><button type="button" class="btn" id="lb-close">Fermer</button></div>
+  <figure><img id="lb-img" alt=""><video id="lb-vid" controls playsinline preload="metadata" hidden></video><figcaption id="lb-cap"></figcaption></figure>
+  <button type="button" class="lb-nav lb-prev" id="lb-prev" aria-label="Précédente" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.8 4.6 7.4 12l7.4 7.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="lb-nav lb-next" id="lb-next" aria-label="Suivante" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 4.6 7.4 7.4-7.4 7.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="lb-actions"><button type="button" class="btn" id="lb-orig" hidden>Voir l’original</button><button type="button" class="btn" id="lb-save" hidden>Enregistrer</button><button type="button" class="btn" id="lb-del" hidden>Supprimer la photo</button><button type="button" class="btn" id="lb-close">Fermer</button></div>
 </div>
 <input type="file" id="photo-input" accept="image/*" multiple hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -2484,6 +2544,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   const NATIVE_LOC = !!(NATIVE && NATIVE.locStart);
   let me = null, meAcc = null, meWatch = null, meWanted = false, meCentred = false;
   let meLL = null, meAccM = 0, meTimer = 0, meApproxSaid = false, meOffSaid = 0;
+  // set by the group (installed app): each new position of mine, while I share it
+  let posHook = null;
   const centreLL = () => (cam ? mapToLL(cam.cx, cam.cy) : [26.1, 44.43]);
   function mapsHere() {
     const [lon, lat] = centreLL();
@@ -2506,6 +2568,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     clearTimeout(meTimer);
     meLL = [lon, lat];
     meAccM = accuracy || 0;
+    if (posHook) posHook();
     const [x, y] = llToMap(lon, lat);
     if (!me) {
       const layer = sv('g', { class: 'm-me', 'aria-hidden': 'true' });
@@ -3035,7 +3098,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let photos = [];
   let ideasReadOnly = false;
   // the installed app's group (see "the group" below): off, who (linked, name not chosen yet) or on
-  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], pending: [], tq: [], folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false };
+  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], pending: [], tq: [], positions: {}, folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false, feedAll: false };
   const canWriteIdeas = () => !!shared.db && shared.canWrite !== false && !ideasReadOnly;
   const canUpload = () => (SITE ? grp.state === 'on' : !!shared.assets && !!shared.db && shared.canWrite !== false);
   const names = new Map();
@@ -3133,8 +3196,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (u) return h('img', { src: u, alt: alt || '', decoding: 'async' });
     return h('span', { class: 'g-wait', 'aria-hidden': 'true' });
   }
-  function thumb(ph) {
-    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir ' + (ph.kind === 'video' ? 'la vidéo' : 'la photo') + ' de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : ''), onclick: () => openLightbox(ph.id) },
+  function thumb(ph, list) {
+    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir ' + (ph.kind === 'video' ? 'la vidéo' : 'la photo') + ' de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : ''), onclick: () => openLightbox(ph.id, Array.isArray(list) ? list : null) },
       photoImg(ph, ''), ph.kind === 'video' ? h('span', { class: 'thumb-play', 'aria-hidden': 'true' }, playIcon(), ph.dur ? fmtClock(ph.dur) : null) : null,
       ph.pending ? h('span', { class: 'thumb-wait', 'aria-hidden': 'true' }, clockIcon()) : null);
   }
@@ -3194,6 +3257,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     else if (sheetState.type === 'outlist') nodes = outListView(sheetState.id);
     else if (sheetState.type === 'out') nodes = outView(sheetState.id, sheetState.i);
     else if (sheetState.type === 'stay') nodes = stayView(sheetState.stay);
+    else if (sheetState.type === 'friend') nodes = friendView(sheetState.id);
     else nodes = formView(sheetState.draft);
     sheetBody.replaceChildren(...nodes);
   }
@@ -3360,7 +3424,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     }
     if (SITE) return out.concat(groupPhotosBlock(pid, pics));
     out.push(h('p', { class: 'sh-h' }, h('span', { text: 'Photos du groupe' }), pics.length ? h('span', { text: String(pics.length) }) : null));
-    if (pics.length) out.push(h('div', { class: 'thumbs' }, pics.map(thumb)));
+    if (pics.length) out.push(h('div', { class: 'thumbs' }, pics.map((x) => thumb(x, pics))));
     else out.push(h('p', { class: 'sh-empty', text: canUpload() ? 'Ajoutez vos photos de ce lieu, avant ou pendant le voyage.' : uploadHint() }));
     if (canUpload()) out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => pickPhotos({ place: pid, day: guessDay(pid) }) }, '+ Ajouter des photos')));
     out.push(h('p', { class: 'sh-h' }, h('span', { text: 'Idées du groupe' }), here.length ? h('span', { text: String(here.length) }) : null));
@@ -3711,13 +3775,14 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       const di = ideas.filter((i) => i.day === day);
       if (di.length) kids.push(h('p', { class: 'dx-h', text: 'Idées du groupe' }), ideaList(di));
       const dp = photos.filter((p) => p.day === day);
-      if (dp.length) kids.push(h('p', { class: 'dx-h', text: 'Photos du groupe' }), h('div', { class: 'dx-photos' }, dp.map(thumb)));
+      if (dp.length) kids.push(h('p', { class: 'dx-h', text: 'Photos du groupe' }), h('div', { class: 'dx-photos' }, dp.map((x) => thumb(x, dp))));
       host.replaceChildren(...kids);
     });
   }
   function renderData() {
     renderDayExtras();
     renderIdeaPins();
+    if (SITE) renderAlbum();
     if (sheetState && sheetState.type !== 'form' && !sheet.hidden) {
       const top = sheet.scrollTop;
       renderSheet();
@@ -3809,8 +3874,6 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let lbConfirm = false;
   let lbLastFocus = null;
   let lbNote = '';
-  // in the app's group: the original in Google Drive, where a video plays
-  const lbOpen = $('lb-open');
   function lbCaption() {
     if (!lbPhoto) return;
     const video = lbPhoto.kind === 'video';
@@ -3818,22 +3881,17 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const what = video ? 'vidéo' + (lbPhoto.dur ? ' de ' + fmtClock(lbPhoto.dur) : '') : SITE && lbPhoto.size ? 'original' : '';
     $('lb-cap').textContent = [placeName(lbPhoto.place), lbPhoto.day ? dayLabel(lbPhoto.day) : '', 'ajoutée par ' + who(lbPhoto.by),
       what && lbPhoto.size ? what + ', ' + fmtSize(lbPhoto.size) : what, lbPhoto.pending ? 'en attente d’envoi' : '', lbNote].filter(Boolean).join(' · ');
-    if (lbOpen) {
-      const can = SITE && !lbPhoto.pending && /^[A-Za-z0-9_-]{10,80}$/.test(lbPhoto.id);
-      lbOpen.hidden = !can;
-      if (can) {
-        lbOpen.href = 'https://drive.google.com/file/d/' + encodeURIComponent(lbPhoto.id) + '/view';
-        lbOpen.textContent = video ? 'Lire dans Google Drive' : 'Original dans Google Drive';
-      }
-    }
   }
-  function openLightbox(id) {
+  let lbList = null;
+  function openLightbox(id, list) {
     const ph = photos.find((p) => p.id === id);
     if (!ph) return;
+    if (list !== undefined) lbList = list && list.length > 1 ? list.map((x) => x.id) : null;
     lbPhoto = ph;
     lbConfirm = false;
     lbNote = '';
     lbImg.alt = 'Photo de ' + (placeName(ph.place) || 'l’étape');
+    lbReset();
     if (SITE) {
       // the thumbnail at once, the whole photo when it is on the phone or the network brings it
       const u = gThumbUrl(ph.id);
@@ -3842,13 +3900,15 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         .catch(() => { if (lbPhoto && lbPhoto.id === ph.id) { lbNote = 'aperçu : la photo entière s’affiche avec du réseau'; lbCaption(); } });
       lbDel.hidden = !(grp.me && ph.by === grp.me.id);
       lbDel.textContent = ph.pending ? 'Annuler l’envoi' : ph.kind === 'video' ? 'Supprimer la vidéo' : 'Supprimer la photo';
+      lbMedia(ph);
     } else {
       lbImg.src = blobUrl(ph.asset);
       lbDel.hidden = !(shared.assets && ph.by && ph.by === shared.me);
       lbDel.textContent = 'Supprimer la photo';
     }
     lbCaption();
-    lbLastFocus = document.activeElement;
+    lbNav();
+    if (lb.hidden) lbLastFocus = document.activeElement;
     lb.hidden = false;
     $('lb-close').focus({ preventScroll: true });
   }
@@ -3856,13 +3916,15 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const ph = PHOTOS[id];
     if (!ph) return;
     lbPhoto = null;
+    lbList = null;
+    lbReset();
+    lbNav();
     lbConfirm = false;
     lbImg.src = ph.src;
     lbImg.alt = ph.cap;
     lb.setAttribute('aria-label', 'Photo : ' + ph.cap);
     $('lb-cap').replaceChildren(h('span', { class: 'lb-t', text: ph.cap }), h('span', { class: 'lb-c' }, creditLinks(ph), ', via ' + photoSource(ph)));
     lbDel.hidden = true;
-    if (lbOpen) lbOpen.hidden = true;
     if (lb.hidden) lbLastFocus = document.activeElement;
     lb.hidden = false;
     $('lb-close').focus({ preventScroll: true });
@@ -3880,10 +3942,182 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (lb.hidden) return;
     lb.hidden = true;
     lbPhoto = null;
+    lbList = null;
+    lbReset();
     lbImg.removeAttribute('src');
     if (lbLastFocus && document.contains(lbLastFocus)) lbLastFocus.focus({ preventScroll: true });
   }
   $('lb-close').addEventListener('click', closeLightbox);
+  // previous and next in the list the photo was opened from (a place, a day, the album): buttons, arrow keys, a swipe
+  const lbPrev = $('lb-prev'), lbNext = $('lb-next');
+  function lbStep(d) {
+    if (!lbList || !lbPhoto) return;
+    const i = lbList.indexOf(lbPhoto.id);
+    const ids = lbList.filter((x) => photos.some((p) => p.id === x));
+    if (i < 0 || !ids.length) return;
+    const j = (ids.indexOf(lbPhoto.id) + d + ids.length) % ids.length;
+    lbList = ids;
+    openLightbox(ids[j]);
+  }
+  function lbNav() {
+    const on = !!(lbList && lbList.length > 1 && lbPhoto);
+    if (lbPrev) lbPrev.hidden = !on;
+    if (lbNext) lbNext.hidden = !on;
+  }
+  if (lbPrev) lbPrev.addEventListener('click', (e) => { e.stopPropagation(); lbStep(-1); });
+  if (lbNext) lbNext.addEventListener('click', (e) => { e.stopPropagation(); lbStep(1); });
+  document.addEventListener('keydown', (e) => { if (lb.hidden || !lbList) return; if (e.key === 'ArrowLeft') lbStep(-1); else if (e.key === 'ArrowRight') lbStep(1); });
+  let lbTouch = null;
+  lb.addEventListener('touchstart', (e) => { lbTouch = e.touches.length === 1 && e.target.tagName !== 'VIDEO' ? [e.touches[0].clientX, e.touches[0].clientY] : null; }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    if (!lbTouch || !lbList) return;
+    const t = e.changedTouches[0], dx = t.clientX - lbTouch[0], dy = t.clientY - lbTouch[1];
+    lbTouch = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) lbStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  // the original photo or the video, read from the group's Drive through its script: nobody needs a Google account
+  const lbVid = $('lb-vid'), lbOrig = $('lb-orig'), lbSave = $('lb-save');
+  let lbDl = null;
+  function lbReset() {
+    if (lbDl) { lbDl.stop = true; if (lbDl.url) URL.revokeObjectURL(lbDl.url); }
+    lbDl = null;
+    if (lbVid) { try { lbVid.pause(); } catch (e) { /* not playing */ } lbVid.removeAttribute('src'); lbVid.hidden = true; }
+    lbImg.hidden = false;
+    [lbOrig, lbSave].forEach((b) => { if (b) { b.hidden = true; b.disabled = false; } });
+  }
+  function lbMedia(ph) {
+    if (!lbOrig || !lbSave) return;
+    const video = ph.kind === 'video';
+    const can = !ph.pending && /^[A-Za-z0-9_-]{10,80}$/.test(ph.id);
+    lbOrig.hidden = !(can || (ph.pending && video));
+    lbSave.hidden = !can;
+    lbOrig.textContent = (video ? 'Lire la vidéo' : 'Voir l’original') + (ph.size > 8 * 1024 * 1024 ? ' (' + fmtSize(ph.size) + ')' : '');
+    lbSave.textContent = 'Enregistrer';
+    lbDl = { id: ph.id, ph, stop: false, blob: null, url: '', busy: false, ok: false };
+  }
+  const extOfMime = (m) => ({ 'image/jpeg': 'jpg', 'image/heic': 'heic', 'image/heif': 'heif', 'image/png': 'png', 'image/webp': 'webp', 'video/quicktime': 'mov', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/3gpp': '3gp', 'video/x-matroska': 'mkv' }[m] || (m.split('/')[1] || 'bin').replace(/[^a-z0-9]/g, '').slice(0, 5));
+  // plain letters in the name: some phones and computers refuse accents in a downloaded file's name
+  function mediaName(ph, mime) {
+    const parts = ['Nouvel An', placeName(ph.place), ph.day ? DAYS[ph.day].short : '', who(ph.by) === 'toi' ? (grp.me && grp.me.name) : who(ph.by), String(ph.id).slice(-6)].filter(Boolean);
+    return parts.join(' - ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim() + '.' + extOfMime(mime || '');
+  }
+  async function gDownload(dl, onStep) {
+    const ph = dl.ph;
+    const parts = [];
+    let off = 0, size = ph.size || 0, mime = '';
+    for (;;) {
+      if (dl.stop) throw { code: 'stopped' };
+      const r = await gcall('part', { id: ph.id, offset: off }, 180000);
+      if (typeof r.data !== 'string') throw { code: 'server' };
+      size = +r.size || size;
+      mime = r.mime || mime;
+      if (!r.data) break;
+      const bin = atob(r.data);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      parts.push(new Blob([u8]));
+      off += u8.length;
+      onStep(off, size);
+      if (size && off >= size) break;
+    }
+    return new Blob(parts, { type: mime || (ph.kind === 'video' ? 'video/mp4' : 'image/jpeg') });
+  }
+  async function lbFetch(dl) {
+    if (dl.blob || dl.busy) return dl.blob;
+    dl.busy = true;
+    const big = dl.ph.size > 200 * 1024 * 1024;
+    try {
+      dl.blob = await gDownload(dl, (n, t) => { if (lbDl === dl) { lbNote = 'chargement ' + (t ? Math.min(99, Math.floor((n / t) * 100)) + ' %' : fmtSize(n)) + (big ? ', garde l’app ouverte' : ''); lbCaption(); } });
+      if (lbDl === dl) { lbNote = ''; lbCaption(); }
+      return dl.blob;
+    } catch (e) {
+      if (lbDl === dl && (!e || e.code !== 'stopped')) { lbNote = e && (e.code === 'offline' || e.code === 'network') ? 'pas de réseau pour charger l’original' : 'l’original n’a pas pu être chargé'; lbCaption(); }
+      return null;
+    } finally { dl.busy = false; }
+  }
+  async function lbShow(dl) {
+    const ph = dl.ph;
+    if (ph.pending) {
+      const q = await gdb.get('q', ph.cid).catch(() => null);
+      const f = (q && q.file) || bigFiles.get(ph.cid);
+      if (!f || lbDl !== dl) return;
+      dl.url = URL.createObjectURL(f);
+    } else {
+      const blob = await lbFetch(dl);
+      if (!blob || lbDl !== dl) return;
+      dl.url = URL.createObjectURL(blob);
+    }
+    if (ph.kind === 'video') {
+      lbImg.hidden = true;
+      lbVid.hidden = false;
+      lbVid.src = dl.url;
+      lbVid.play().catch(() => { /* the player's own button starts it */ });
+      lbVid.onerror = () => { if (lbDl === dl) { lbNote = 'ce téléphone ne sait pas lire ce format : enregistre la vidéo pour l’ouvrir'; lbVid.hidden = true; lbImg.hidden = false; lbCaption(); } };
+    } else {
+      const im = new Image();
+      im.onload = () => { if (lbDl === dl) lbImg.src = dl.url; };
+      im.onerror = () => { if (lbDl === dl) { lbNote = 'format que ce téléphone n’affiche pas : enregistre l’original pour l’ouvrir'; lbCaption(); } };
+      im.src = dl.url;
+    }
+    lbOrig.hidden = true;
+  }
+  if (lbOrig) lbOrig.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dl = lbDl;
+    if (!dl) return;
+    if (dl.ph.size > 200 * 1024 * 1024 && !dl.ok && !dl.ph.pending) { dl.ok = true; lbOrig.textContent = 'Charger ' + fmtSize(dl.ph.size) + ' ?'; return; }
+    lbOrig.disabled = true;
+    lbShow(dl).finally(() => { lbOrig.disabled = false; });
+  });
+  const saveNoTap = () => !!(NATIVE && typeof NATIVE.saveStart === 'function') || !(navigator.canShare && navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ''));
+  async function saveBlob(blob, name) {
+    if (NATIVE && typeof NATIVE.saveStart === 'function') {
+      const id = NATIVE.saveStart(name, blob.type || 'application/octet-stream');
+      if (!id) throw { code: 'save' };
+      const step = 3 * 1024 * 1024;
+      try {
+        for (let off = 0; off < blob.size; off += step) {
+          if (!NATIVE.saveChunk(id, await blobB64(blob.slice(off, off + step)))) throw { code: 'save' };
+        }
+      } catch (e) {
+        try { if (typeof NATIVE.saveCancel === 'function') NATIVE.saveCancel(id); } catch (x) { /* already dropped */ }
+        throw e;
+      }
+      const where = NATIVE.saveEnd(id);
+      if (!where) throw { code: 'save' };
+      return 'Enregistré dans ' + where + '.';
+    }
+    const file = new File([blob], name, { type: blob.type });
+    if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return ''; } catch (e) { if (e && e.name === 'AbortError') return ''; }
+    }
+    const a = h('a', { href: URL.createObjectURL(blob), download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    return 'Téléchargé : ' + name;
+  }
+  if (lbSave) lbSave.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const dl = lbDl;
+    if (!dl) return;
+    // a phone's share sheet needs the tap itself: there, a first tap loads the file and a second one saves it
+    if (!dl.blob) {
+      if (dl.ph.size > 200 * 1024 * 1024 && !dl.ok) { dl.ok = true; lbSave.textContent = 'Charger ' + fmtSize(dl.ph.size) + ' ?'; return; }
+      lbSave.disabled = true;
+      const b = await lbFetch(dl);
+      lbSave.disabled = false;
+      if (!b || lbDl !== dl) return;
+      // the original is here: the photo shows it (a video waits for its own button)
+      if (dl.ph.kind !== 'video') lbShow(dl);
+      if (!saveNoTap()) { lbSave.textContent = 'Enregistrer sur le téléphone'; return; }
+    }
+    try {
+      const msg = await saveBlob(dl.blob, mediaName(dl.ph, dl.blob.type));
+      if (msg) toast(msg, 5000);
+    } catch (err) { toast('L’enregistrement n’a pas marché : la mémoire du téléphone est peut-être pleine.', 6000); }
+  });
   lb.addEventListener('click', (e) => { if (e.target === lb || e.target.tagName === 'FIGURE') closeLightbox(); });
   lbDel.addEventListener('click', async () => {
     if (!lbPhoto) return;
@@ -4159,7 +4393,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const ch = [...String(m.name || '?').trim()];
     return twin && ch.length > 1 ? first(m.name) + ch[1].toLowerCase() : first(m.name);
   }
-  const cleanMembers = (list) => (Array.isArray(list) ? list : []).filter((m) => m && typeof m.id === 'string' && typeof m.name === 'string').map((m) => ({ id: m.id, name: m.name.slice(0, 24) }));
+  const cleanMembers = (list) => (Array.isArray(list) ? list : []).filter((m) => m && typeof m.id === 'string' && typeof m.name === 'string').map((m) => ({ id: m.id, name: m.name.slice(0, 24), at: typeof m.at === 'string' ? m.at.slice(0, 30) : '' }));
   function cleanTicks(t) {
     const out = {};
     if (t && typeof t === 'object') for (const k of Object.keys(t)) if (ckBoxes.has(k) && /^[gr]-/.test(k)) out[k] = typeof t[k] === 'string' ? t[k] : '1';
@@ -4227,7 +4461,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let stBusy = false, stLast = 0;
   async function refreshState(force) {
     if (grp.state === 'off' || stBusy) return;
-    if (!force && Date.now() - stLast < 20000) return;
+    if (!force && Date.now() - stLast < 15000) return;
     stBusy = true;
     grp.syncing = true;
     renderGroup();
@@ -4241,8 +4475,16 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     stBusy = false;
     grp.syncing = false;
     renderGroup();
-    if (grp.state === 'on' && grp.net && grp.err !== 'forbidden') { flushTicks(); processQueue(); }
+    if (grp.state === 'on' && grp.net && grp.err !== 'forbidden') { flushTicks(); processQueue(); if (unsharePending) sendStop(); }
     ensureThumbs();
+    scheduleRefresh();
+  }
+  let refreshTimer = 0;
+  function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    if (grp.state === 'off' || document.visibilityState === 'hidden') return;
+    const live = sharing() || Object.values(grp.positions || {}).some((x) => x.until > Date.now());
+    refreshTimer = setTimeout(() => refreshState(true), live ? 20000 : 40000);
   }
   function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, folderUrl: grp.folderUrl, space: grp.space, at: grp.syncedAt || Date.now() }); }
   function applyState(st) {
@@ -4255,9 +4497,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     grp.photos = (Array.isArray(st.photos) ? st.photos : []).map(cleanGPhoto).filter(Boolean);
     grp.folderUrl = typeof st.folderUrl === 'string' && /^https:\/\/drive\.google\.com\//.test(st.folderUrl) ? st.folderUrl : '';
     grp.space = st.space && +st.space.limit > 0 ? { used: +st.space.used || 0, limit: +st.space.limit } : null;
+    grp.positions = cleanPositions(st.positions);
     syncMyBoxes();
     setPhotos();
     renderWho();
+    renderFriends();
+    renderFeedBadge();
   }
   // the photos the app shows: the group's, then mine still on the phone
   function setPhotos() {
@@ -4503,6 +4748,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       const step = r.chunk > 0 ? r.chunk : 4 * 1024 * 1024;
       try {
         while (off < size) {
+          if (mediaHeld()) throw { code: 'held' };
           qSent = off;
           renderGroup();
           const c = await gcall('chunk', Object.assign({ offset: off, data: await blobB64(data.slice(off, Math.min(size, off + step))) }, base), 300000);
@@ -4523,11 +4769,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   async function processQueue() {
     if (qBusy || grp.state !== 'on' || !grp.pending.length || grp.err === 'forbidden' || grp.err === 'drive_full') return;
     if (navigator.onLine === false) { grp.net = false; renderGroup(); return; }
+    if (mediaHeld()) { renderGroup(); return; }
     qBusy = true;
+    if (grp.pending.reduce((n, x) => n + (x.size || 0), 0) > 20 * 1024 * 1024) keepAwake(true);
     let sent = 0, dropped = 0;
     const lost = [];
     try {
-      while (grp.pending.length && grp.state === 'on') {
+      while (grp.pending.length && grp.state === 'on' && !mediaHeld()) {
         const q = grp.pending[0];
         qCurrent = q.cid;
         qSent = 0;
@@ -4561,9 +4809,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         setPhotos();
         saveState();
       }
-    } catch (e) { grpFail(e); }
+    } catch (e) { if (!e || e.code !== 'held') grpFail(e); }
     qBusy = false;
     qCurrent = '';
+    keepAwake(false);
     renderGroup();
     const msg = [];
     if (sent) msg.push(sent > 1 ? sent + ' fichiers envoyés au groupe.' : 'Envoyé au groupe.');
@@ -4630,7 +4879,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       const big = cur.size > 8 * 1024 * 1024;
       parts.push('envoi ' + what + (big ? ' : ' + Math.min(99, Math.floor((qSent / cur.size) * 100)) + ' %, ' + fmtSize(qSent) + ' sur ' + fmtSize(cur.size) : '') + (np > 1 ? ', puis ' + (np - 1) + ' autre' + (np > 2 ? 's' : '') : ''));
       if (cur.size > 50 * 1024 * 1024) parts.push('garde l’app ouverte');
-    } else if (np) parts.push(np + (np > 1 ? ' fichiers en attente' : ' fichier en attente'));
+    } else if (np) {
+      const held = mediaHeld();
+      parts.push(np + (np > 1 ? ' fichiers' : ' fichier') + (held === 'pause' ? (np > 1 ? ' gardés' : ' gardé') + ', envois en pause' : held === 'wifi' ? (np > 1 ? ' attendent' : ' attend') + ' le wifi' : ' en attente'));
+    }
     if (nt) parts.push(nt + (nt > 1 ? ' cases à envoyer' : ' case à envoyer'));
     return parts.join(' · ');
   }
@@ -4699,16 +4951,19 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       h('span', { class: 'grp-n' }, s.m.name, s.m.id === grp.me.id ? [' ', h('small', { text: 'toi' })] : null),
       h('span', { class: 'grp-k', text: plural(s.g, 'plat', 'plats') + ' · ' + plural(s.r, 'objet', 'objets') }),
       h('span', { class: 'grp-bar', 'aria-hidden': 'true' }, h('i', { style: 'width:' + ((s.n / total) * 100).toFixed(1) + '%' }))))));
+    out.push(positionsPart(), feedPart());
     out.push(h('p', { class: 'grp-st', role: 'status' }, h('span', { text: grpStatus() }),
+      grp.pending.length && mediaHeld() === 'pause' ? h('button', { type: 'button', class: 'grp-sync', onclick: () => setUpMode('now') }, 'Reprendre les envois') : null,
       !grp.syncing ? h('button', { type: 'button', class: 'grp-sync', onclick: () => { grp.err = grp.err === 'forbidden' ? grp.err : ''; grp.net = true; refreshState(true); } }, 'Actualiser') : null));
     if (grp.showLink) {
       out.push(h('div', { class: 'grp-form' }, h('label', { for: 'grp-link', text: 'Lien d’invitation, à copier sur votre groupe' }),
         h('input', { id: 'grp-link', class: 'grp-link', readonly: true, value: inviteLink(), onfocus: (e) => e.target.select() })));
     }
     if (grp.more) {
+      out.push(sendModePart());
       out.push(h('div', { class: 'grp-more' },
         grp.folderUrl ? h('a', { class: 'btn', href: grp.folderUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Les photos dans Google Drive', arrowIcon()) : null,
-        grp.folderUrl ? h('p', { class: 'grp-note', text: 'Le dossier s’ouvre pour la personne qui a installé le script, qui peut le partager depuis Google Drive.' + (grp.space ? ' Son Drive : ' + fmtSize(grp.space.used) + ' utilisés sur ' + fmtSize(grp.space.limit) + '.' : '') }) : null,
+        grp.folderUrl ? h('p', { class: 'grp-note', text: 'Le dossier ne s’ouvre que pour la personne qui a installé le script ; les autres voient tout dans l’album, sans compte Google.' + (grp.space ? ' Son Drive : ' + fmtSize(grp.space.used) + ' utilisés sur ' + fmtSize(grp.space.limit) + '.' : '') }) : null,
         h('button', { type: 'button', class: 'btn btn-ghost', onclick: grpNotMe }, 'Ce n’est pas moi'),
         grp.leave
           ? h('button', { type: 'button', class: 'btn btn-danger', onclick: grpLeave }, 'Confirmer : quitter sur ce téléphone')
@@ -4717,7 +4972,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     }
     return out;
   }
+  let shareBtnReady = false;
   function renderGroup() {
+    if (shareBtnReady) renderShareBtn();
     if (!grpBox) return;
     const act = document.activeElement;
     const keep = act && grpBox.contains(act) && act.id ? act.id : '';
@@ -4750,15 +5007,374 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function groupPhotosBlock(pid, pics) {
     const out = [h('p', { class: 'sh-h' }, h('span', { text: 'Photos et vidéos du groupe' }), pics.length ? h('span', { text: String(pics.length) }) : null)];
-    if (pics.length) out.push(h('div', { class: 'thumbs' }, pics.map(thumb)));
+    if (pics.length) out.push(h('div', { class: 'thumbs' }, pics.map((x) => thumb(x, pics))));
     if (grp.state !== 'on') {
       out.push(h('p', { class: 'sh-empty', text: grp.state === 'who' ? 'Choisis ton prénom dans le groupe, puis ajoute tes photos et vidéos de ce lieu.' : 'Reliez l’app au groupe pour partager vos photos et vidéos de ce lieu : elles vont dans le Google Drive du groupe.' }));
       out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: goGroup }, grp.state === 'who' ? 'Choisir mon prénom' : 'Relier au groupe')));
       return out;
     }
-    out.push(h('p', { class: 'sh-empty', text: (pics.length ? '' : 'Rien encore ici. ') + 'En taille originale dans le Google Drive du groupe, rangées par lieu : les vidéos partent mieux en wifi.' }));
+    out.push(h('p', { class: 'sh-empty', text: (pics.length ? '' : 'Rien encore ici. ') + 'En taille originale dans le Google Drive du groupe, rangées par lieu, à voir ici sans compte Google. Les vidéos partent mieux en wifi.' }));
     out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => pickPhotos({ place: pid, day: guessDay(pid) }) }, '+ Photos et vidéos')));
     return out;
+  }
+
+
+  // ---- where the others are: a position shared for 30 minutes at most, by choice, erased for everyone when it stops
+  const GRP_SHARE = 'grp-share', GRP_UNSHARE = 'grp-unshare', GRP_SEEN = 'grp-seen', GRP_UP = 'grp-up';
+  const SHARE_MS = 30 * 60 * 1000;
+  let shareUntil = 0, shareLast = null, shareTimer = 0, shareStartedLoc = false, unsharePending = false;
+  const sharing = () => grp.state === 'on' && shareUntil > Date.now();
+  const distM = (a, b) => { const k = Math.cos(((a[1] + b[1]) / 2) * D2R); return Math.hypot((a[0] - b[0]) * k, a[1] - b[1]) * 111320; };
+  function ago(t) {
+    const m = Math.round((Date.now() - t) / 60000);
+    if (m < 1) return 'à l’instant';
+    if (m < 60) return 'il y a ' + m + ' min';
+    const d = new Date(t), n = new Date();
+    const sameDay = d.toDateString() === n.toDateString();
+    const y = new Date(n);
+    y.setDate(n.getDate() - 1);
+    if (sameDay) return 'à ' + hhmm(t);
+    if (d.toDateString() === y.toDateString()) return 'hier à ' + hhmm(t);
+    return 'le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' à ' + hhmm(t);
+  }
+  const agoShort = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'maintenant' : m < 60 ? m + ' min' : hhmm(t); };
+  function cleanPositions(x) {
+    const out = {};
+    if (x && typeof x === 'object') {
+      for (const id of Object.keys(x)) {
+        const q = x[id];
+        if (q && typeof q.lat === 'number' && typeof q.lon === 'number' && Math.abs(q.lat) <= 90 && Math.abs(q.lon) <= 180) out[id] = { lat: q.lat, lon: q.lon, acc: +q.acc || 0, at: +q.at || 0, until: +q.until || 0 };
+      }
+    }
+    return out;
+  }
+  async function sendPos(force) {
+    if (!sharing() || !meLL || !grp.net) return;
+    const now = Date.now();
+    if (!force && shareLast && now - shareLast.t < 30000 && distM(shareLast.ll, meLL) < 25) return;
+    shareLast = { t: now, ll: meLL.slice() };
+    try { await gcall('pos', { member: grp.me.id, lat: meLL[1], lon: meLL[0], acc: meAccM, until: shareUntil }); }
+    catch (e) { shareLast = null; if (e && (e.code === 'offline' || e.code === 'network')) grp.net = false; }
+  }
+  posHook = () => { sendPos(false); };
+  function armShareTimer() {
+    clearTimeout(shareTimer);
+    if (shareUntil) shareTimer = setTimeout(() => stopShare(true), Math.max(0, shareUntil - Date.now()));
+  }
+  function startShare(more) {
+    if (grp.state !== 'on') { toast('Relie d’abord l’app au groupe, dans Défis.'); goGroup(); return; }
+    shareUntil = Date.now() + SHARE_MS;
+    lsSet(GRP_SHARE, { until: shareUntil });
+    shareLast = null;
+    if (!meWanted) { shareStartedLoc = true; locate(false); } else sendPos(true);
+    armShareTimer();
+    renderGroup();
+    renderShareBtn();
+    scheduleRefresh();
+    if (!more) toast('Ta position est visible par le groupe pendant 30 minutes.', 6000, { onclick: () => stopShare(false), text: 'Arrêter' });
+  }
+  async function sendStop() {
+    if (grp.state !== 'on') return;
+    try { await gcall('pos', { member: grp.me.id, stop: true }); unsharePending = false; lsSet(GRP_UNSHARE, null); }
+    catch (e) { unsharePending = true; lsSet(GRP_UNSHARE, true); }
+  }
+  function stopShare(quiet) {
+    const was = shareUntil > 0;
+    shareUntil = 0;
+    lsSet(GRP_SHARE, null);
+    clearTimeout(shareTimer);
+    if (shareStartedLoc) { shareStartedLoc = false; meOff(); }
+    if (was) sendStop();
+    renderGroup();
+    renderShareBtn();
+    if (!quiet) toast('Position plus partagée : elle est effacée pour le groupe.');
+  }
+  // the map's button: share, or stop
+  const zgrp = SITE ? h('button', { type: 'button', id: 'zgrp', class: 'zloc zgrp', 'aria-pressed': 'false', hidden: true, onclick: () => (sharing() ? stopShare(false) : startShare()) },
+    (() => { const s0 = sv('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' }); s0.append(sv('path', { d: 'M9 11.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2zm7.6-.4a2.9 2.9 0 1 0 0-5.8 2.9 2.9 0 0 0 0 5.8zM2.4 19.6c0-3.4 3-5.8 6.6-5.8s6.6 2.4 6.6 5.8v.8H2.4zm14.4.8v-.8c0-1.9-.7-3.5-1.9-4.7.6-.2 1.3-.3 2-.3 2.8 0 5.1 1.9 5.1 4.7v1.1z' })); return s0; })()) : null;
+  if (zgrp) { const ctl = document.querySelector('.mapctl'); if (ctl) ctl.append(zgrp); }
+  shareBtnReady = true;
+  function renderShareBtn() {
+    if (!zgrp) return;
+    zgrp.hidden = grp.state !== 'on';
+    const on = sharing();
+    zgrp.setAttribute('aria-pressed', String(on));
+    const t = on ? 'Position partagée avec le groupe, encore ' + Math.max(1, Math.ceil((shareUntil - Date.now()) / 60000)) + ' min : toucher pour arrêter' : 'Partager ma position avec le groupe, 30 minutes';
+    zgrp.setAttribute('aria-label', t);
+    zgrp.title = t;
+  }
+  setInterval(() => { if (sharing()) { renderShareBtn(); if (grpBox && grp.state === 'on' && document.visibilityState === 'visible') renderGroup(); } }, 60000);
+  // the others on the map: a dot in their colour, their name and how long ago
+  const friendLayer = sv('g', { class: 'm-friends' });
+  svg.insertBefore(friendLayer, traveler);
+  const friendMarks = new Map();
+  function renderFriends() {
+    const now = Date.now();
+    const pos = grp.state === 'on' ? grp.positions || {} : {};
+    const ids = Object.keys(pos).filter((id) => (!grp.me || id !== grp.me.id) && pos[id].until > now && grp.members.some((m) => m.id === id));
+    for (const [id, mk] of friendMarks) {
+      if (ids.includes(id)) continue;
+      mk.el.remove();
+      const i = marks.indexOf(mk);
+      if (i >= 0) marks.splice(i, 1);
+      friendMarks.delete(id);
+    }
+    ids.forEach((id) => {
+      const p = pos[id], m = grp.members.find((x) => x.id === id);
+      const [x, y] = llToMap(p.lon, p.lat);
+      let mk = friendMarks.get(id);
+      if (!mk) {
+        const g = sv('g', { class: 'sc fr-mk', tabindex: '0', role: 'button' });
+        g.append(sv('circle', { class: 'fr-hit', r: '17' }), sv('circle', { class: 'fr-dot', r: '11.5' }), sv('text', { class: 'fr-ini', x: '0', y: '4.2' }), sv('text', { class: 'fr-name', x: '16', y: '4.5' }));
+        g.addEventListener('click', (e) => { if (pick || suppressClick) return; e.stopPropagation(); openSheet({ type: 'friend', id }); });
+        g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSheet({ type: 'friend', id }); } });
+        friendLayer.append(g);
+        mk = makeMark(g, { x, y, lo: 0, hi: Infinity, forced: true, me: true, friend: id });
+        marks.push(mk);
+        friendMarks.set(id, mk);
+      }
+      mk.x = x;
+      mk.y = y;
+      mk.el.setAttribute('class', 'sc fr-mk ' + mClass(id) + (now - p.at > 5 * 60000 ? ' is-old' : ''));
+      mk.el.querySelector('.fr-ini').textContent = shortName(m);
+      mk.el.querySelector('.fr-name').textContent = m.name + ' · ' + agoShort(p.at);
+      mk.el.setAttribute('aria-label', 'Position de ' + m.name + ', ' + ago(p.at));
+    });
+    if (cam) apply(cam);
+    if (sheetState && sheetState.type === 'friend' && !sheet.hidden) renderSheet();
+  }
+  function friendView(id) {
+    const m = grp.members.find((x) => x.id === id);
+    const p = (grp.positions || {})[id];
+    if (!m || !p || p.until <= Date.now()) return [h('p', { class: 'sh-kind', text: 'Position' }), h('h3', { class: 'sh-title', id: 'sheet-title', text: m ? m.name : 'Le groupe' }), h('p', { class: 'sh-desc', text: 'Position plus partagée.' })];
+    const ll = [p.lon, p.lat];
+    return [h('p', { class: 'sh-kind', text: 'Position partagée' }),
+      h('h3', { class: 'sh-title fr-title', id: 'sheet-title' }, h('span', { class: 'grp-av ' + mClass(id), 'aria-hidden': 'true', text: shortName(m) }), m.name),
+      h('p', { class: 'sh-desc', text: 'Vue ' + ago(p.at) + (p.acc ? ', à ' + p.acc + ' m près' : '') + '. Partagée jusqu’à ' + hhmm(p.until) + '.' }),
+      h('div', { class: 'btn-row' },
+        canWalk(ll) ? h('button', { type: 'button', class: 'go go-lg', onclick: () => walkTo({ ll, name: m.name, q: p.lat + ',' + p.lon }) }, walkIcon(), 'Itinéraire à pied') : null,
+        h('a', { class: 'btn', href: gm(p.lat + ',' + p.lon), target: '_blank', rel: 'noopener noreferrer' }, 'Google Maps', arrowIcon()))];
+  }
+  function scrollToMap() {
+    const top = Math.max(0, Math.round(window.scrollY + $('itineraire').getBoundingClientRect().top - (stacked.matches ? 0 : 12)));
+    hold = true;
+    autoTarget = top;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { autoTarget = null; }, 3000);
+    window.scrollTo({ top, behavior: reduce.matches ? 'auto' : 'smooth' });
+  }
+  function showFriend(id) {
+    const mk = friendMarks.get(id);
+    if (!mk) return;
+    scrollToMap();
+    goManual();
+    flyTo(clampCam({ cx: mk.x, cy: mk.y, w: Math.min(cam ? cam.w : Infinity, boxSize().W * 0.004) }));
+    openSheet({ type: 'friend', id });
+  }
+  function positionsPart() {
+    const now = Date.now();
+    const others = Object.keys(grp.positions || {}).filter((id) => id !== grp.me.id && grp.positions[id].until > now).map((id) => grp.members.find((m) => m.id === id)).filter(Boolean);
+    const left = Math.max(1, Math.ceil((shareUntil - now) / 60000));
+    return h('div', { class: 'grp-part' },
+      h('p', { class: 'grp-sub', text: 'Positions' }),
+      sharing()
+        ? h('p', { class: 'grp-line' }, h('span', { class: 'grp-live', 'aria-hidden': 'true' }), 'Tu partages ta position, encore ' + left + ' min. ',
+          h('button', { type: 'button', class: 'grp-sync', onclick: () => stopShare(false) }, 'Arrêter'), ' · ', h('button', { type: 'button', class: 'grp-sync', onclick: () => startShare(true) }, 'Encore 30 min'))
+        : h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => startShare() }, pinIcon(), 'Partager ma position 30 min')),
+      others.length
+        ? h('div', { class: 'grp-names' }, others.map((m) => h('button', { type: 'button', class: 'grp-name ' + mClass(m.id), onclick: () => showFriend(m.id) }, h('span', { class: 'grp-av', 'aria-hidden': 'true', text: shortName(m) }), m.name, h('small', { text: agoShort(grp.positions[m.id].at) }))))
+        : null,
+      h('p', { class: 'grp-note', text: 'Visible seulement par le groupe, sur la carte, et effacée dès qu’on arrête ; l’app doit rester ouverte pour la mettre à jour.' }));
+  }
+
+  // ---- what's new: the others' ticks, photos and arrivals, read from what the group already holds
+  function itemName(id) {
+    const b = ckBoxes.get(id);
+    const t = b && b.closest('.df-item') && b.closest('.df-item').querySelector('.df-t b');
+    return t ? t.textContent : id;
+  }
+  function feedEvents() {
+    if (grp.state !== 'on') return [];
+    const me = grp.me.id;
+    const ev = [];
+    grp.members.forEach((m) => { const t = Date.parse(m.at); if (m.id !== me && t) ev.push({ t, who: m.id, kind: 'join' }); });
+    Object.keys(grp.ticks).forEach((mid) => {
+      if (mid === me) return;
+      const tk = grp.ticks[mid] || {};
+      Object.keys(tk).forEach((item) => { const t = Date.parse(tk[item]); if (t) ev.push({ t, who: mid, kind: item[0] === 'g' ? 'taste' : 'find', item }); });
+    });
+    grp.photos.forEach((p) => { const t = Date.parse(p.at); if (p.by && p.by !== me && t) ev.push({ t, who: p.by, kind: 'media', ph: p }); });
+    ev.sort((a, b) => b.t - a.t);
+    const out = [];
+    ev.forEach((e) => {
+      const last = out[out.length - 1];
+      if (last && last.who === e.who && last.kind === e.kind && last.kind !== 'join' && last.t0 - e.t < 3 * 3600000 && (e.kind !== 'media' || last.items[0].ph.place === e.ph.place)) { last.items.push(e); last.t0 = e.t; return; }
+      out.push({ who: e.who, kind: e.kind, t: e.t, t0: e.t, items: [e] });
+    });
+    return out;
+  }
+  function feedText(g) {
+    const m = grp.members.find((x) => x.id === g.who);
+    const name = m ? m.name : 'Quelqu’un';
+    const list = (xs) => (xs.length <= 3 ? xs.slice(0, -1).join(', ') + (xs.length > 1 ? ' et ' : '') + xs[xs.length - 1] : xs.slice(0, 2).join(', ') + ' et ' + (xs.length - 2) + ' autres');
+    if (g.kind === 'join') return name + ' a rejoint le groupe';
+    if (g.kind === 'taste') return name + ' a goûté ' + list(g.items.map((e) => itemName(e.item)));
+    if (g.kind === 'find') return name + ' a trouvé ' + list(g.items.map((e) => itemName(e.item)));
+    const v = g.items.filter((e) => e.ph.kind === 'video').length, p = g.items.length - v;
+    const what = [p ? (p > 1 ? p + ' photos' : 'une photo') : '', v ? (v > 1 ? v + ' vidéos' : 'une vidéo') : ''].filter(Boolean).join(' et ');
+    return name + ' a ajouté ' + what + ' à ' + placeName(g.items[0].ph.place);
+  }
+  const feedSeen = () => +lsGet(GRP_SEEN, 0) || 0;
+  function feedUnseen() { const seen = feedSeen(); return feedEvents().filter((g) => g.t > seen).length; }
+  function renderFeedBadge() {
+    const tab = document.querySelector('#tabbar .tab[data-go="defis"] i');
+    if (!tab) return;
+    let b = tab.querySelector('.tab-badge');
+    const n = feedUnseen();
+    if (!n) { if (b) b.remove(); return; }
+    if (!b) { b = h('span', { class: 'tab-badge' }); tab.append(b); }
+    b.textContent = n > 9 ? '9+' : String(n);
+    b.setAttribute('aria-label', n + ' nouveautés du groupe');
+  }
+  function markFeedSeen() {
+    if (grp.state !== 'on') return;
+    const evs = feedEvents();
+    if (!evs.length || evs[0].t <= feedSeen()) return;
+    lsSet(GRP_SEEN, Date.now());
+    renderFeedBadge();
+  }
+  // the news count as read once they have been on screen a moment
+  function watchFeed() {
+    if (!grpBox || !('IntersectionObserver' in window)) return;
+    let t = 0;
+    new IntersectionObserver((es) => {
+      const on = es.some((e) => e.isIntersecting);
+      clearTimeout(t);
+      if (on) t = setTimeout(() => { markFeedSeen(); }, 1500);
+    }, { threshold: 0.4 }).observe(grpBox);
+  }
+  function feedPart() {
+    const evs = feedEvents();
+    const seen = feedSeen();
+    const shown = grp.feedAll ? evs.slice(0, 40) : evs.slice(0, 4);
+    return h('div', { class: 'grp-part grp-feed' },
+      h('p', { class: 'grp-sub', text: 'Quoi de neuf' }),
+      evs.length ? h('ul', { class: 'grp-news' }, shown.map((g) => h('li', { class: g.t > seen ? 'is-new' : '' },
+        h('button', { type: 'button', class: 'grp-new', onclick: () => openFeed(g) },
+          h('span', { class: 'grp-av ' + mClass(g.who), 'aria-hidden': 'true', text: shortName(grp.members.find((x) => x.id === g.who) || { name: '?' }) }),
+          h('span', { class: 'grp-new-t' }, h('span', { text: feedText(g) }), h('small', { text: ago(g.t) }))))))
+        : h('p', { class: 'grp-note', text: 'Rien pour l’instant : les défis cochés et les photos des autres apparaîtront ici.' }),
+      evs.length > 4 ? h('button', { type: 'button', class: 'grp-sync', onclick: () => { grp.feedAll = !grp.feedAll; renderGroup(); } }, grp.feedAll ? 'Moins' : 'Tout voir (' + evs.length + ')') : null);
+  }
+  function openFeed(g) {
+    markFeedSeen();
+    if (g.kind === 'media') { openAlbum({ who: g.who, day: g.items[0].ph.day || '' }); return; }
+    if (g.kind === 'taste' || g.kind === 'find') {
+      const b = ckBoxes.get(g.items[0].item);
+      const grpEl = b && b.closest('.df-group');
+      if (grpEl) goDefis(grpEl.id.slice(3));
+      const li = b && b.closest('.df-item');
+      if (li) { li.classList.add('is-flash'); setTimeout(() => li.classList.remove('is-flash'), 2400); }
+    }
+  }
+
+  // ---- sending photos and videos: right away, only on wifi (where the phone says it), or paused; the screen kept on meanwhile
+  let upMode = 'now';
+  function netType() {
+    if (NATIVE && typeof NATIVE.netType === 'function') { try { return String(NATIVE.netType() || ''); } catch (e) { return ''; } }
+    const c = navigator.connection;
+    return c && typeof c.type === 'string' ? c.type : '';
+  }
+  const canTellWifi = () => !!(NATIVE && typeof NATIVE.netType === 'function') || !!(navigator.connection && typeof navigator.connection.type === 'string');
+  function mediaHeld() {
+    if (upMode === 'pause') return 'pause';
+    if (upMode === 'wifi' && !/^(wifi|ethernet)$/.test(netType())) return 'wifi';
+    return '';
+  }
+  function setUpMode(m) {
+    upMode = m;
+    lsSet(GRP_UP, m);
+    renderGroup();
+    processQueue();
+  }
+  let wakeLock = null, awakeNative = false;
+  async function keepAwake(on) {
+    if (NATIVE && typeof NATIVE.keepScreenOn === 'function') {
+      if (awakeNative === !!on) return;
+      awakeNative = !!on;
+      try { NATIVE.keepScreenOn(awakeNative); } catch (e) { /* the screen sleeps as usual */ }
+      return;
+    }
+    try {
+      if (on && !wakeLock && navigator.wakeLock && document.visibilityState === 'visible') { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+      else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { wakeLock = null; }
+  }
+  function sendModePart() {
+    const opts = [['now', 'Tout de suite'], ['wifi', 'En wifi'], ['pause', 'En pause']].filter(([k]) => k !== 'wifi' || canTellWifi());
+    return h('div', { class: 'grp-part' },
+      h('p', { class: 'grp-sub', text: 'Envoi des photos et vidéos' }),
+      h('div', { class: 'grp-seg', role: 'group', 'aria-label': 'Envoi des photos et vidéos' }, opts.map(([k, t]) => h('button', { type: 'button', 'aria-pressed': String(upMode === k), onclick: () => setUpMode(k) }, t))),
+      h('p', { class: 'grp-note', text: canTellWifi() ? 'En wifi : les fichiers attendent le wifi pour partir. Les cases cochées partent toujours, elles ne pèsent rien.' : 'Ce téléphone ne dit pas à l’app s’il est en wifi : mets les envois en pause hors wifi. Les cases cochées partent toujours.' }));
+  }
+
+
+  // ---- the album: every photo and video of the group, day by day, by person
+  const albumSec = SITE && dfSec ? h('section', { class: 'wrap sec', id: 'album', 'aria-labelledby': 'album-h' }) : null;
+  if (albumSec) {
+    dfSec.after(albumSec);
+    const tabDef = document.querySelector('#tabbar .tab[data-go="defis"]');
+    const ic = sv('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+    ic.append(sv('path', { 'fill-rule': 'evenodd', d: 'M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5zm2 .5v9.2l4.1-4.6 3.3 3.4 2.2-2.2L19 16V6zm10.2 1.6a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8z' }));
+    if (tabDef) tabDef.after(h('button', { type: 'button', class: 'tab', 'data-go': 'album' }, h('i', null, ic), h('span', { text: 'Album' })));
+  }
+  const alb = { who: '', day: '' };
+  function openAlbum(f) {
+    alb.who = (f && f.who) || '';
+    alb.day = (f && f.day) || '';
+    renderAlbum();
+    if (!albumSec) return;
+    if (!sheet.hidden) closeSheet();
+    const top = Math.max(0, Math.round(window.scrollY + albumSec.getBoundingClientRect().top - 10));
+    hold = true;
+    autoTarget = top;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { autoTarget = null; }, 3000);
+    window.scrollTo({ top, behavior: reduce.matches ? 'auto' : 'smooth' });
+  }
+  function renderAlbum() {
+    if (!albumSec) return;
+    const head = h('div', { class: 'sec-head' }, h('div', null, h('h2', { class: 'sec-h', id: 'album-h', text: 'Album' }),
+      h('p', { class: 'sec-sub', text: 'Les photos et vidéos du groupe, jour par jour. Les originaux sont dans le Google Drive du groupe, et s’ouvrent ici sans compte Google.' })));
+    if (grp.state !== 'on' && !photos.length) {
+      albumSec.replaceChildren(head, h('div', { class: 'alb-empty' }, h('p', { class: 'sh-empty', text: grp.state === 'who' ? 'Choisis ton prénom dans le groupe pour voir l’album.' : 'Reliez l’app au groupe, dans Défis, pour partager vos photos et vidéos ici.' }),
+        h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: goGroup }, grp.state === 'who' ? 'Choisir mon prénom' : 'Relier au groupe'))));
+      return;
+    }
+    const people = grp.members.filter((m) => photos.some((p) => p.by === m.id));
+    const days = DAY_IDS.filter((d) => photos.some((p) => p.day === d));
+    if (alb.who && !people.some((m) => m.id === alb.who)) alb.who = '';
+    if (alb.day && !days.includes(alb.day)) alb.day = '';
+    const chip = (on, label, fn) => h('button', { type: 'button', class: 'pchip alb-chip', 'aria-pressed': String(on), onclick: fn }, label);
+    const filters = photos.length ? h('div', { class: 'alb-filters' },
+      people.length > 1 ? h('div', { class: 'alb-row', role: 'group', 'aria-label': 'Par personne' }, chip(!alb.who, 'Tout le monde', () => { alb.who = ''; renderAlbum(); }),
+        people.map((m) => chip(alb.who === m.id, m.id === (grp.me && grp.me.id) ? m.name + ' (toi)' : m.name, () => { alb.who = m.id; renderAlbum(); }))) : null,
+      days.length > 1 ? h('div', { class: 'alb-row', role: 'group', 'aria-label': 'Par jour' }, chip(!alb.day, 'Tous les jours', () => { alb.day = ''; renderAlbum(); }),
+        days.map((d) => chip(alb.day === d, dayLabel(d), () => { alb.day = d; renderAlbum(); }))) : null) : null;
+    const list = photos.filter((p) => (!alb.who || p.by === alb.who) && (!alb.day || p.day === alb.day));
+    const byDay = new Map();
+    list.forEach((p) => { const k = p.day || ''; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(p); });
+    const order = [...byDay.keys()].sort((a, b) => (a ? DAY_IDS.indexOf(a) : 99) - (b ? DAY_IDS.indexOf(b) : 99));
+    const flat = order.flatMap((k) => byDay.get(k));
+    const body = flat.length ? order.map((k) => {
+      const ps = byDay.get(k);
+      const v = ps.filter((p) => p.kind === 'video').length;
+      const count = [ps.length - v ? (ps.length - v) + ' photo' + (ps.length - v > 1 ? 's' : '') : '', v ? v + ' vidéo' + (v > 1 ? 's' : '') : ''].filter(Boolean).join(', ');
+      return h('div', { class: 'alb-day' },
+        h('h3', { class: 'alb-h' }, h('span', { text: k ? dayLabel(k) : 'Sans jour' }), h('small', { text: [...new Set(ps.map((p) => placeName(p.place)))].join(', ') + ' · ' + count })),
+        h('div', { class: 'thumbs alb-grid' }, ps.map((p) => thumb(p, flat))));
+    }) : [h('p', { class: 'sh-empty alb-empty', text: photos.length ? 'Rien avec ces filtres.' : 'Pas encore de photo : ajoutez-en depuis la fiche d’un lieu, sur la carte.' })];
+    albumSec.replaceChildren(head, ...(filters ? [filters] : []), ...body);
   }
 
   // ---- joining, leaving
@@ -4805,6 +5421,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       if (grp.url) { grp.pending = []; gdb.clear('q').catch(() => {}); }
       lsSet(GRP_TQ, null);
       lsSet(GRP_STATE, null);
+      lsSet(GRP_SEEN, null);
     }
     grp.url = url;
     grp.code = code;
@@ -4846,6 +5463,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     grp.iosHint = false;
     saveGrp();
     lsSet(GRP_WAS, true);
+    if (!feedSeen()) lsSet(GRP_SEEN, Date.now());
     const server = grp.ticks[grp.me.id] || {};
     grp.tq = [];
     if (first) DF_IDS.forEach((id) => { if (ckBoxes.get(id).checked && !server[id]) grp.tq.push({ item: id, done: true, at: new Date().toISOString() }); });
@@ -4860,6 +5478,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     refreshState(true);
   }
   function grpNotMe() {
+    if (sharing()) stopShare(true);
     grp.me = null;
     grp.state = 'who';
     grp.more = false;
@@ -4871,8 +5490,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     setPhotos();
   }
   function grpLeave() {
+    if (sharing()) stopShare(true);
     Object.assign(grp, { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], pending: [], tq: [], folderUrl: '', syncedAt: 0, err: '', more: false, leave: false, showLink: false, setup: null, iosHint: false });
-    [GRP_KEY, GRP_STATE, GRP_TQ, GRP_WAS, GRP_FULL].forEach((k) => lsSet(k, null));
+    [GRP_KEY, GRP_STATE, GRP_TQ, GRP_WAS, GRP_FULL, GRP_SEEN, GRP_SHARE, GRP_UNSHARE].forEach((k) => lsSet(k, null));
+    unsharePending = false;
+    renderFriends();
+    renderShareBtn();
+    renderFeedBadge();
     gdb.clear('q').catch(() => {});
     gdb.clear('th').catch(() => {});
     gdb.clear('ph').catch(() => {});
@@ -4929,6 +5553,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       }
       setTimeout(goGroup, 500);
     }
+    upMode = ['now', 'wifi', 'pause'].includes(lsGet(GRP_UP, 'now')) ? lsGet(GRP_UP, 'now') : 'now';
     // photos still waiting on the phone
     gdb.all('q').then((items) => {
       grp.pending = (items || []).filter((q) => q && q.cid && q.th).map((q) => {
@@ -4944,8 +5569,20 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (grp.state !== 'off') refreshState(true);
     window.addEventListener('online', () => { grp.net = true; refreshState(true); });
     window.addEventListener('offline', () => { grp.net = false; renderGroup(); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshState(false); });
-    setInterval(() => { if (document.visibilityState === 'visible') refreshState(false); }, 90000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') { refreshState(false); if (qBusy) keepAwake(true); } else clearTimeout(refreshTimer);
+    });
+    if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener('change', () => { renderGroup(); processQueue(); });
+    // the Android app says when the phone changes network (wifi found, mobile data)
+    window.__appNet = () => { renderGroup(); processQueue(); };
+    // a share still running when the app was closed carries on, until its end
+    const sh = lsGet(GRP_SHARE, null);
+    if (sh && +sh.until > Date.now() && grp.state === 'on') { shareUntil = +sh.until; shareStartedLoc = true; locate(false); armShareTimer(); }
+    else if (sh) { lsSet(GRP_SHARE, null); if (grp.state === 'on') { unsharePending = true; } }
+    unsharePending = unsharePending || !!lsGet(GRP_UNSHARE, false);
+    renderShareBtn();
+    renderAlbum();
+    watchFeed();
   }
 
   // ---------------------------------------------------------------- connect to the page's shared store
