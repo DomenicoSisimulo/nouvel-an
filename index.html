@@ -4031,7 +4031,11 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       if (lbDl === dl) { lbNote = ''; lbCaption(); }
       return dl.blob;
     } catch (e) {
-      if (lbDl === dl && (!e || e.code !== 'stopped')) { lbNote = e && (e.code === 'offline' || e.code === 'network') ? 'pas de réseau pour charger l’original' : 'l’original n’a pas pu être chargé'; lbCaption(); }
+      if (lbDl === dl && (!e || e.code !== 'stopped')) {
+        lbNote = e && (e.code === 'offline' || e.code === 'network') ? 'pas de réseau pour charger l’original'
+          : e && e.code === 'bad_request' ? 'le script du groupe doit être mis à jour pour charger les originaux (README, « Mettre à jour le script »)' : 'l’original n’a pas pu être chargé';
+        lbCaption();
+      }
       return null;
     } finally { dl.busy = false; }
   }
@@ -5054,7 +5058,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (!force && shareLast && now - shareLast.t < 30000 && distM(shareLast.ll, meLL) < 25) return;
     shareLast = { t: now, ll: meLL.slice() };
     try { await gcall('pos', { member: grp.me.id, lat: meLL[1], lon: meLL[0], acc: meAccM, until: shareUntil }); }
-    catch (e) { shareLast = null; if (e && (e.code === 'offline' || e.code === 'network')) grp.net = false; }
+    catch (e) {
+      shareLast = null;
+      if (e && (e.code === 'offline' || e.code === 'network')) grp.net = false;
+      // a script from before the positions
+      else if (e && e.code === 'bad_request' && sharing()) { stopShare(true); toast('Le script du groupe doit être mis à jour pour partager les positions : README du dépôt, « Mettre à jour le script ».', 9000); }
+    }
   }
   posHook = () => { sendPos(false); };
   function armShareTimer() {
@@ -5076,7 +5085,11 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   async function sendStop() {
     if (grp.state !== 'on') return;
     try { await gcall('pos', { member: grp.me.id, stop: true }); unsharePending = false; lsSet(GRP_UNSHARE, null); }
-    catch (e) { unsharePending = true; lsSet(GRP_UNSHARE, true); }
+    catch (e) {
+      // without network, it is said again later; a script that does not keep positions has nothing to erase
+      if (e && (e.code === 'offline' || e.code === 'network')) { unsharePending = true; lsSet(GRP_UNSHARE, true); }
+      else { unsharePending = false; lsSet(GRP_UNSHARE, null); }
+    }
   }
   function stopShare(quiet) {
     const was = shareUntil > 0;
