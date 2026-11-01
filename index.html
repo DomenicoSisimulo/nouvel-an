@@ -4121,6 +4121,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (code === 'no_member') return 'Ton prénom n’est plus dans le groupe : choisis-le à nouveau.';
     if (code === 'drive_full') return 'Le Google Drive du groupe est plein : il faut y faire de la place pour envoyer la suite.';
     if (code === 'drive') return 'Google Drive n’a pas pris le fichier : nouvel essai plus tard.';
+    if (code === 'old_script') return 'Le script du groupe doit être mis à jour pour envoyer photos et vidéos (README du dépôt, « Mettre à jour le script ») : elles attendent sur le téléphone.';
     return 'Le script du groupe a répondu par une erreur : nouvel essai plus tard.';
   }
   function grpOk() { grp.net = true; grp.err = ''; grp.syncedAt = Date.now(); }
@@ -4486,7 +4487,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   async function sendOne(item, data) {
     const size = data.size, base = { member: item.by, cid: item.cid };
     const kind = item.kind || 'photo', pv = item.pv || (item.kind ? null : item.full);
-    let r = await gcall('start', Object.assign({ probe: true }, base), 60000);
+    let r;
+    // a script from before the originals does not know "start": the files wait on the phone until it is updated
+    try { r = await gcall('start', Object.assign({ probe: true }, base), 60000); } catch (e) { throw e && e.code === 'bad_request' ? { code: 'old_script' } : e; }
     let stall = 0;
     for (let round = 0; round < 8; round++) {
       if (r.photo) return cleanGPhoto(r.photo);
