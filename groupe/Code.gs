@@ -4,7 +4,10 @@
  * Il relie l'app de chacun à ton Google Drive :
  *  - les photos et les vidéos envoyées depuis l'app, en taille originale (1 Go par photo, 5 Go par vidéo
  *    au plus), sont rangées par lieu dans le dossier « Nouvel An 2026 – photos du groupe » de ton Drive ;
- *  - les défis cochés par chacun sont gardés ici, pour que tout le monde voie qui a fait quoi.
+ *  - les défis cochés par chacun sont gardés ici, pour que tout le monde voie qui a fait quoi ;
+ *  - la position de ceux qui choisissent de la partager, une demi-heure au plus, effacée à l'arrêt.
+ * Personne d'autre que toi n'a besoin d'un compte Google : les originaux et les vidéos se regardent
+ * dans l'app, qui les lit par morceaux à travers ce script.
  *
  * Le script ne touche qu'à ce dossier, qu'il crée lui-même. L'app n'y accède qu'avec le code
  * du groupe, que contient le lien d'invitation : ne le partage qu'avec les membres du groupe.
@@ -31,6 +34,8 @@ var MAX_VIDEO = 5 * 1024 * 1024 * 1024;
 var CHUNK = 4 * 1024 * 1024;
 var SESSION_DAYS = 6;
 var UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size';
+// positions partagées : 30 minutes au plus, arrondies à une dizaine de mètres
+var POS_MAX_MS = 30 * 60 * 1000;
 
 function doGet() {
   return ContentService.createTextOutput('Le script du groupe Nouvel An fonctionne. Colle son adresse dans l’app : Défis, puis Créer le groupe.');
@@ -71,6 +76,8 @@ function handle(b) {
     case 'upload': return upload(P, b);
     case 'start': return start(P, b);
     case 'chunk': return chunk(P, b);
+    case 'part': return part(P, b);
+    case 'pos': return position(P, b);
     case 'thumbs': return thumbs(P, b);
     case 'photo': return photo(P, b);
     case 'delete': return withLock(function () { return remove(P, b); });
@@ -143,7 +150,14 @@ function state(P) {
   photos.sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : 0; });
   var space = null;
   try { space = { used: DriveApp.getStorageUsed(), limit: DriveApp.getStorageLimit() }; } catch (e) { /* espace inconnu */ }
-  return { members: readJson(all.members, []), ticks: ticks, photos: photos, folderUrl: folderUrl(P), space: space, now: new Date().toISOString() };
+  var where = {};
+  var now = Date.now();
+  for (var key in all) {
+    if (key.indexOf('l:') !== 0) continue;
+    var pos = readJson(all[key], null);
+    if (pos && pos.until > now) where[key.slice(2)] = pos;
+  }
+  return { members: readJson(all.members, []), ticks: ticks, photos: photos, positions: where, folderUrl: folderUrl(P), space: space, now: new Date().toISOString() };
 }
 
 // ------------------------------------------------------------------ un membre : son prénom, une seule fois par prénom
@@ -379,7 +393,7 @@ function afterPut(P, cid, st, res) {
 
 function finish(P, cid, st, file) {
   if (!file || typeof file.id !== 'string') throw fail('drive');
-  var rec = { id: file.id, t: st.t, v: st.v, k: st.k, p: st.p, d: st.d, b: st.b, at: st.at, w: st.w, h: st.h, s: st.n };
+  var rec = { id: file.id, t: st.t, v: st.v, k: st.k, p: st.p, d: st.d, b: st.b, at: st.at, w: st.w, h: st.h, s: st.n, m: st.m };
   if (st.du) rec.du = st.du;
   P.setProperty('p:' + rec.id, JSON.stringify(rec));
   P.setProperty('c:' + cid, rec.id);
@@ -423,4 +437,54 @@ function autoriser() {
   DriveApp.getRootFolder();
   UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/about?fields=user', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
   return 'Autorisations en place.';
+}
+
+// ------------------------------------------------------------------ lire un original ou une vidéo par morceaux de 4 Mio, sans compte Google
+// seulement les fichiers de l'album : le script ne sert rien d'autre de ton Drive
+function part(P, b) {
+  var rec = typeof b.id === 'string' ? readJson(P.getProperty('p:' + b.id), null) : null;
+  if (!rec) throw fail('gone');
+  var from = typeof b.offset === 'number' && b.offset >= 0 ? Math.floor(b.offset) : 0;
+  var res = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(rec.id) + '?alt=media', {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), Range: 'bytes=' + from + '-' + (from + CHUNK - 1) },
+    muteHttpExceptions: true
+  });
+  var code = res.getResponseCode();
+  if (code === 404) throw fail('gone');
+  if (code === 416) return { offset: from, size: from, data: '' };
+  if (code !== 206 && code !== 200) throw fail('drive');
+  var bytes = res.getContent();
+  var total = rec.s || 0;
+  var m = /\/(\d+)$/.exec(header(res, 'content-range'));
+  if (m) total = Number(m[1]);
+  else if (code === 200) total = bytes.length;
+  return { offset: from, size: total, mime: rec.m || (rec.k === 'video' ? 'video/mp4' : 'image/jpeg'), data: Utilities.base64Encode(code === 200 && from > 0 ? bytes.slice(from) : bytes) };
+}
+
+// ------------------------------------------------------------------ partager sa position : une demi-heure au plus, effacée dès qu'on arrête
+function position(P, b) {
+  memberOf(P, b.member);
+  var key = 'l:' + b.member;
+  var now = Date.now();
+  var all = P.getProperties();
+  for (var k in all) {
+    if (k.indexOf('l:') !== 0) continue;
+    var old = readJson(all[k], null);
+    if (!old || old.until <= now) P.deleteProperty(k);
+  }
+  if (b.stop) {
+    P.deleteProperty(key);
+    return { ok: true };
+  }
+  var lat = typeof b.lat === 'number' && b.lat >= -90 && b.lat <= 90 ? Math.round(b.lat * 1e4) / 1e4 : null;
+  var lon = typeof b.lon === 'number' && b.lon >= -180 && b.lon <= 180 ? Math.round(b.lon * 1e4) / 1e4 : null;
+  if (lat === null || lon === null) throw fail('bad_request');
+  var until = typeof b.until === 'number' ? Math.min(b.until, now + POS_MAX_MS) : now + POS_MAX_MS;
+  if (until <= now) {
+    P.deleteProperty(key);
+    return { ok: true };
+  }
+  var acc = typeof b.acc === 'number' && b.acc > 0 ? Math.min(5000, Math.round(b.acc)) : 0;
+  P.setProperty(key, JSON.stringify({ lat: lat, lon: lon, acc: acc, at: now, until: until }));
+  return { ok: true, until: until };
 }
