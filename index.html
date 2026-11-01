@@ -785,6 +785,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .b-notes { margin: 14px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .b-notes li { font-size: 14px; line-height: 1.5; color: var(--ink-2); padding-top: 10px; border-top: 2px solid var(--rule); }
 .b-notes b { color: var(--ink); font-weight: 600; }
+.board-solo { margin-top: 28px; }
 
 /* budget */
 .bud { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 28px 40px; align-items: start; }
@@ -1461,6 +1462,28 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       <li><b>Prietenia.</b> Billets en vente 60 jours avant sur le site international de CFR Călători, soit vers le 30 octobre pour le 29 décembre, ou 30 jours avant sur railway.md. Le service change à la mi-décembre&nbsp;: reconfirmez l'horaire en achetant.</li>
       <li><b>Retour du 2 janvier.</b> Brașov → Bucarest prend environ 2&nbsp;h&nbsp;30. Le train de la Gare du Nord met une vingtaine de minutes jusqu'à Otopeni, avec un départ toutes les 40 minutes environ.</li>
       <li><b>Arrivée à Roissy.</b> Air Serbia arrive au terminal 2B, à quelques minutes à pied de la gare TGV. Comptez le passage de la police aux frontières avant de prendre le train.</li>
+    </ul>
+    <div class="board board-solo">
+      <div class="b-title"><strong>Retour de Louis</strong><span>Plecări · Odloty</span></div>
+      <div class="b-head" aria-hidden="true"><span>Jour</span><span>Départ</span><span>Trajet</span><span>Arrivée</span><span>Remarque</span></div>
+
+      <div class="b-row">
+        <div class="b-date">Sam. 2 janv.<small>Vol de Louis</small></div>
+        <div class="b-times"><div class="b-dep b-led">21:50</div><span class="b-sep" aria-hidden="true"></span><div class="b-arr b-led">22:40</div></div>
+        <div class="b-route"><div class="b-ft">Bucarest BBU <i>→</i> Varsovie WAW</div><div class="b-op">Wizz Air W6 1584, au départ de Băneasa et non d'Otopeni</div></div>
+        <div class="b-rem"><span class="hot">Băneasa</span></div>
+      </div>
+      <div class="b-row">
+        <div class="b-date">Dim. 3 janv.<small>Vol de Louis</small></div>
+        <div class="b-times"><div class="b-dep b-led">06:00</div><span class="b-sep" aria-hidden="true"></span><div class="b-arr b-led">08:30</div></div>
+        <div class="b-route"><div class="b-ft">Varsovie WAW <i>→</i> Lyon LYS</div><div class="b-op">Wizz Air W6 1309, après la nuit à l'aéroport de Varsovie</div></div>
+        <div class="b-rem"><span>Nuit d'escale</span></div>
+      </div>
+    </div>
+    <ul class="b-notes">
+      <li><b>Băneasa, pas Otopeni.</b> Le vol de Louis part de l'aéroport Aurel-Vlaicu de Băneasa, au nord de Bucarest et plus près du centre qu'Otopeni. <a href="https://www.google.com/maps/dir/?api=1&amp;destination=Aeroportul%20Interna%C8%9Bional%20Aurel%20Vlaicu%2C%20Bucure%C8%99ti" target="_blank" rel="noopener noreferrer">Itinéraire dans Google Maps</a></li>
+      <li><b>Enregistrement en ligne.</b> Wizz Air l'ouvre 24&nbsp;h avant chaque vol&nbsp;: le vendredi 1<sup>er</sup> janvier à 21:50 pour Bucarest → Varsovie, le samedi 2 janvier à 06:00 pour Varsovie → Lyon.</li>
+      <li><b>Correspondance autonome à Varsovie.</b> Nuit à l'aéroport Chopin, puis les bagages en soute à récupérer et à réenregistrer, et la sécurité à repasser. La Roumanie et la Pologne sont dans l'espace Schengen&nbsp;: pas de contrôle des passeports, mais une pièce d'identité.</li>
     </ul>
   </section>
 <section class="wrap sec" id="billets" aria-labelledby="billets-h">
@@ -4976,12 +4999,18 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       });
     }
     window.addEventListener('offline', () => toast('Hors ligne : la carte, les rues, les photos et vos billets restent disponibles.', 5000));
-    // the settings file can change on GitHub without a new build
-    fetch('./config.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((cfg) => {
-      if (!cfg || typeof cfg !== 'object') return;
+    // the settings file can change on GitHub without a new build; the Android app reads the one online
+    // (the last copy kept for offline), the installed web app its own, kept offline by the service worker
+    const useCfg = (cfg) => {
+      if (!cfg || typeof cfg !== 'object') return false;
       if (typeof cfg.tricount === 'string') TRIP.tricount = cfg.tricount;
       if (Array.isArray(cfg.auberges)) TRIP.auberges = cfg.auberges;
       renderTrip();
+      return true;
+    };
+    if (APP) useCfg(lsGet('cfg', null));
+    fetch(APP && PUBLIC_URL ? PUBLIC_URL + 'config.json' : './config.json', { cache: 'no-cache', credentials: 'omit' }).then((r) => (r.ok ? r.json() : null)).then((cfg) => {
+      if (useCfg(cfg) && APP) lsSet('cfg', cfg);
     }).catch(() => {});
     initTickets();
   }
