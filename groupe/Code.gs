@@ -2,8 +2,8 @@
  * Nouvel An Chișinău–Bucarest : le script du groupe.
  *
  * Il relie l'app de chacun à ton Google Drive :
- *  - les photos envoyées depuis l'app sont rangées par lieu dans le dossier
- *    « Nouvel An 2026 – photos du groupe » de ton Drive ;
+ *  - les photos et les vidéos envoyées depuis l'app, en taille originale (1 Go par photo, 5 Go par vidéo
+ *    au plus), sont rangées par lieu dans le dossier « Nouvel An 2026 – photos du groupe » de ton Drive ;
  *  - les défis cochés par chacun sont gardés ici, pour que tout le monde voie qui a fait quoi.
  *
  * Le script ne touche qu'à ce dossier, qu'il crée lui-même. L'app n'y accède qu'avec le code
@@ -12,6 +12,9 @@
  * Installation (une fois) : colle ce fichier dans un nouveau projet sur script.google.com, puis
  * Déployer → Nouveau déploiement → Application Web, « Exécuter en tant que : moi »,
  * « Qui a accès : Tout le monde ». Le README du dépôt détaille chaque étape.
+ *
+ * Les gros fichiers arrivent en morceaux de 4 Mo, que le script transmet à Google Drive : il lui faut
+ * donc deux autorisations, Google Drive et « Se connecter à un service externe ».
  */
 
 var FOLDER_NAME = 'Nouvel An 2026 – photos du groupe';
@@ -19,7 +22,15 @@ var MAX_MEMBERS = 8;
 // tailles en caractères base64 : une photo de 1920 px pèse environ 0,6 Mo, sa miniature 40 Ko
 var MAX_FULL = 6000000;
 var MAX_THUMB = 400000;
+// l'aperçu montré dans l'app (2048 px) et la miniature, en caractères base64
+var MAX_SMALL = 4000000;
 var PENDING_MS = 5 * 60 * 1000;
+// les originaux : 1 Go par photo, 5 Go par vidéo, envoyés en morceaux de 4 Mio (un multiple de 256 Kio, comme le veut Drive)
+var MAX_PHOTO = 1024 * 1024 * 1024;
+var MAX_VIDEO = 5 * 1024 * 1024 * 1024;
+var CHUNK = 4 * 1024 * 1024;
+var SESSION_DAYS = 6;
+var UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size';
 
 function doGet() {
   return ContentService.createTextOutput('Le script du groupe Nouvel An fonctionne. Colle son adresse dans l’app : Défis, puis Créer le groupe.');
@@ -58,6 +69,8 @@ function handle(b) {
     case 'join': return withLock(function () { return join(P, b); });
     case 'tick': return withLock(function () { return tick(P, b); });
     case 'upload': return upload(P, b);
+    case 'start': return start(P, b);
+    case 'chunk': return chunk(P, b);
     case 'thumbs': return thumbs(P, b);
     case 'photo': return photo(P, b);
     case 'delete': return withLock(function () { return remove(P, b); });
@@ -128,7 +141,9 @@ function state(P) {
     }
   }
   photos.sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : 0; });
-  return { members: readJson(all.members, []), ticks: ticks, photos: photos, folderUrl: folderUrl(P), now: new Date().toISOString() };
+  var space = null;
+  try { space = { used: DriveApp.getStorageUsed(), limit: DriveApp.getStorageLimit() }; } catch (e) { /* espace inconnu */ }
+  return { members: readJson(all.members, []), ticks: ticks, photos: photos, folderUrl: folderUrl(P), space: space, now: new Date().toISOString() };
 }
 
 // ------------------------------------------------------------------ un membre : son prénom, une seule fois par prénom
@@ -240,10 +255,14 @@ function thumbs(P, b) {
   return { thumbs: out };
 }
 
+// ce que l'app affiche en grand : l'aperçu, ou la photo elle-même pour celles envoyées avant les originaux
 function photo(P, b) {
   var rec = typeof b.id === 'string' ? readJson(P.getProperty('p:' + b.id), null) : null;
   if (!rec) throw fail('gone');
-  return { id: rec.id, data: Utilities.base64Encode(DriveApp.getFileById(rec.id).getBlob().getBytes()) };
+  var id = rec.v || (rec.k === 'video' ? rec.t : rec.id);
+  var f = DriveApp.getFileById(id);
+  if (!rec.v && f.getSize() > 25 * 1024 * 1024) throw fail('too_large');
+  return { id: rec.id, data: Utilities.base64Encode(f.getBlob().getBytes()) };
 }
 
 // ------------------------------------------------------------------ supprimer : seulement ses propres photos, qui vont dans la corbeille du Drive
@@ -253,6 +272,155 @@ function remove(P, b) {
   if (rec.b !== b.member) throw fail('not_uploader');
   try { DriveApp.getFileById(rec.id).setTrashed(true); } catch (e) { /* déjà supprimée dans le Drive */ }
   try { DriveApp.getFileById(rec.t).setTrashed(true); } catch (e) { /* idem */ }
+  if (rec.v) { try { DriveApp.getFileById(rec.v).setTrashed(true); } catch (e) { /* idem */ } }
   P.deleteProperty('p:' + rec.id);
   return { ok: true };
+}
+
+// ------------------------------------------------------------------ les originaux, photos et vidéos : un envoi en plusieurs morceaux
+// start : la miniature et l'aperçu tout de suite, puis une session d'envoi ouverte chez Google Drive (gardée dans u:<cid>)
+// chunk : chaque morceau, transmis à Drive ; au dernier, Drive renvoie le fichier et la photo entre dans l'album
+function start(P, b) {
+  var who = memberOf(P, b.member);
+  var cid = typeof b.cid === 'string' && /^[A-Za-z0-9_-]{6,40}$/.test(b.cid) ? b.cid : '';
+  if (!cid) throw fail('bad_request');
+  var done = P.getProperty('c:' + cid);
+  if (done && done.indexOf('en-cours:') !== 0) return { photo: readJson(P.getProperty('p:' + done), null) };
+  var st = readJson(P.getProperty('u:' + cid), null);
+  if (st) return { received: st.r, chunk: CHUNK };
+  if (b.probe) return { need: 'start', chunk: CHUNK };
+  dropOldSessions(P);
+  var kind = b.kind === 'video' ? 'video' : 'photo';
+  var size = typeof b.size === 'number' && isFinite(b.size) ? Math.floor(b.size) : 0;
+  if (size <= 0) throw fail('bad_request');
+  if (size > (kind === 'video' ? MAX_VIDEO : MAX_PHOTO)) throw fail('too_large');
+  var place = typeof b.place === 'string' && /^[a-z0-9][a-z0-9-]{0,30}$/.test(b.place) ? b.place : '';
+  if (!place) throw fail('bad_request');
+  if (typeof b.thumb !== 'string' || !b.thumb || b.thumb.length > MAX_SMALL) throw fail('bad_request');
+  if (b.preview && (typeof b.preview !== 'string' || b.preview.length > MAX_SMALL)) throw fail('bad_request');
+  var mime = typeof b.mime === 'string' && /^(image|video)\/[A-Za-z0-9.+-]{1,40}$/.test(b.mime) ? b.mime : (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+  var ext = typeof b.ext === 'string' && /^[a-z0-9]{1,5}$/.test(b.ext) ? b.ext : (kind === 'video' ? 'mp4' : 'jpg');
+  var label = text(b.pn, 40).replace(/[\/\\:*?"<>|]/g, '') || place;
+  var stamp = Utilities.formatDate(new Date(), 'Europe/Paris', 'yyyy-MM-dd HH.mm.ss');
+  var name = label + ' – ' + stamp + ' – ' + who.name.replace(/[\/\\:*?"<>|]/g, '');
+  var small = DriveApp.getFolderById(P.getProperty('thumbs'));
+  var t = small.createFile(Utilities.newBlob(Utilities.base64Decode(b.thumb), 'image/jpeg', name + ' (miniature).jpg')).getId();
+  var v = b.preview ? small.createFile(Utilities.newBlob(Utilities.base64Decode(b.preview), 'image/jpeg', name + ' (aperçu).jpg')).getId() : '';
+  var res = UrlFetchApp.fetch(UPLOAD_URL, {
+    method: 'post',
+    contentType: 'application/json; charset=UTF-8',
+    payload: JSON.stringify({ name: name + '.' + ext, parents: [placeFolder(P, place, label).getId()], mimeType: mime }),
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': mime, 'X-Upload-Content-Length': String(size) },
+    muteHttpExceptions: true
+  });
+  var loc = header(res, 'location');
+  if (res.getResponseCode() !== 200 || !loc) {
+    trashAll([t, v]);
+    if (/storageQuotaExceeded|quotaExceeded/.test(res.getContentText())) throw fail('drive_full');
+    throw fail('drive');
+  }
+  st = {
+    s: loc, n: size, r: 0, k: kind, m: mime, p: place, b: who.id, t: t, v: v, c: Date.now(),
+    d: typeof b.day === 'string' && /^j[1-9]$/.test(b.day) ? b.day : '',
+    at: text(b.at, 30) || new Date().toISOString(),
+    w: typeof b.w === 'number' && b.w > 0 && b.w < 100000 ? Math.round(b.w) : 0,
+    h: typeof b.h === 'number' && b.h > 0 && b.h < 100000 ? Math.round(b.h) : 0,
+    du: typeof b.dur === 'number' && b.dur > 0 && b.dur < 100000 ? Math.round(b.dur) : 0
+  };
+  P.setProperty('u:' + cid, JSON.stringify(st));
+  return { received: 0, chunk: CHUNK };
+}
+
+function chunk(P, b) {
+  var cid = typeof b.cid === 'string' && /^[A-Za-z0-9_-]{6,40}$/.test(b.cid) ? b.cid : '';
+  if (!cid) throw fail('bad_request');
+  var st = readJson(P.getProperty('u:' + cid), null);
+  if (!st) {
+    var done = P.getProperty('c:' + cid);
+    if (done && done.indexOf('en-cours:') !== 0) return { photo: readJson(P.getProperty('p:' + done), null) };
+    throw fail('expired');
+  }
+  if (st.b !== b.member) throw fail('no_member');
+  // l'app reprend là où Drive en est
+  if (b.offset !== st.r) return { received: st.r };
+  if (typeof b.data !== 'string' || !b.data) throw fail('bad_request');
+  var bytes = Utilities.base64Decode(b.data);
+  var end = st.r + bytes.length - 1;
+  if (end >= st.n || (end + 1 < st.n && bytes.length % (256 * 1024) !== 0)) throw fail('bad_request');
+  var res = UrlFetchApp.fetch(st.s, {
+    method: 'put',
+    payload: Utilities.newBlob(bytes, st.m),
+    headers: { 'Content-Range': 'bytes ' + st.r + '-' + end + '/' + st.n },
+    muteHttpExceptions: true,
+    followRedirects: false
+  });
+  return afterPut(P, cid, st, res);
+}
+
+// la réponse de Drive : 308, il en veut encore ; 200 ou 201, le fichier est complet ; sinon, on lui demande où il en est
+function afterPut(P, cid, st, res) {
+  var code = res.getResponseCode();
+  if (code === 308) {
+    st.r = rangeEnd(res) + 1;
+    P.setProperty('u:' + cid, JSON.stringify(st));
+    return { received: st.r };
+  }
+  if (code === 200 || code === 201) return finish(P, cid, st, readJson(res.getContentText(), {}));
+  if (code === 404 || code === 410) {
+    trashAll([st.t, st.v]);
+    P.deleteProperty('u:' + cid);
+    throw fail('expired');
+  }
+  if (code === 403 && /storageQuotaExceeded|quotaExceeded/.test(res.getContentText())) throw fail('drive_full');
+  var q = UrlFetchApp.fetch(st.s, { method: 'put', headers: { 'Content-Range': 'bytes */' + st.n }, muteHttpExceptions: true, followRedirects: false });
+  if (q.getResponseCode() === 308 || q.getResponseCode() === 200 || q.getResponseCode() === 201) return afterPut(P, cid, st, q);
+  throw fail('drive');
+}
+
+function finish(P, cid, st, file) {
+  if (!file || typeof file.id !== 'string') throw fail('drive');
+  var rec = { id: file.id, t: st.t, v: st.v, k: st.k, p: st.p, d: st.d, b: st.b, at: st.at, w: st.w, h: st.h, s: st.n };
+  if (st.du) rec.du = st.du;
+  P.setProperty('p:' + rec.id, JSON.stringify(rec));
+  P.setProperty('c:' + cid, rec.id);
+  P.deleteProperty('u:' + cid);
+  return { photo: rec };
+}
+
+function header(res, name) {
+  var h = res.getHeaders() || {};
+  for (var k in h) if (k.toLowerCase() === name) return String(h[k]);
+  return '';
+}
+
+function rangeEnd(res) {
+  var m = /bytes=0-(\d+)/.exec(header(res, 'range'));
+  return m ? Number(m[1]) : -1;
+}
+
+function trashAll(ids) {
+  for (var i = 0; i < ids.length; i++) {
+    if (!ids[i]) continue;
+    try { DriveApp.getFileById(ids[i]).setTrashed(true); } catch (e) { /* déjà partie */ }
+  }
+}
+
+// les envois jamais finis : Drive oublie leur session au bout d'une semaine
+function dropOldSessions(P) {
+  var all = P.getProperties();
+  for (var k in all) {
+    if (k.indexOf('u:') !== 0) continue;
+    var st = readJson(all[k], null);
+    if (st && Date.now() - st.c > SESSION_DAYS * 24 * 3600 * 1000) {
+      trashAll([st.t, st.v]);
+      P.deleteProperty(k);
+    }
+  }
+}
+
+// à lancer une fois depuis l'éditeur (Exécuter) pour donner au script ses deux autorisations
+function autoriser() {
+  DriveApp.getRootFolder();
+  UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/about?fields=user', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+  return 'Autorisations en place.';
 }

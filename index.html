@@ -923,6 +923,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .thumb.is-pending img { opacity: 0.8; }
 .thumb-wait { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--photo-chip); color: var(--on-photo); }
 .thumb-wait svg { width: 14px; height: 14px; }
+.thumb-play { position: absolute; left: 4px; bottom: 4px; display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px 3px 5px; border-radius: 10px; background: var(--photo-chip); color: var(--on-photo); font: 700 11px/1 var(--f-body); font-variant-numeric: tabular-nums; }
+.thumb-play svg { width: 10px; height: 10px; fill: currentColor; }
 .g-wait { display: block; width: 100%; height: 100%; background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface) 50%, var(--surface-2) 70%) 0 0 / 300% 100%; animation: g-wait 1.4s linear infinite; }
 @keyframes g-wait { to { background-position: -150% 0; } }
 @media (prefers-reduced-motion: reduce) { .g-wait { animation: none; } }
@@ -1896,7 +1898,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 
 <div class="lightbox" id="lightbox" role="dialog" aria-label="Photo" hidden>
   <figure><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
-  <div class="lb-actions"><button type="button" class="btn" id="lb-del" hidden>Supprimer la photo</button><button type="button" class="btn" id="lb-close">Fermer</button></div>
+  <div class="lb-actions"><a class="btn" id="lb-open" href="#" target="_blank" rel="noopener noreferrer" hidden>Original dans Google Drive</a><button type="button" class="btn" id="lb-del" hidden>Supprimer la photo</button><button type="button" class="btn" id="lb-close">Fermer</button></div>
 </div>
 <input type="file" id="photo-input" accept="image/*" multiple hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -1958,6 +1960,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   })();
   const starIcon = () => { const s = sv('svg', { viewBox: '-8 -8 16 16', 'aria-hidden': 'true' }); s.append(sv('path', { d: STAR })); return s; };
   const arrowIcon = () => { const s = sv('svg', { viewBox: '0 0 12 12', 'aria-hidden': 'true' }); s.append(sv('path', { d: 'M2.5 9.5 9.5 2.5M4 2.5h5.5V8', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })); return s; };
+  const playIcon = () => { const s = sv('svg', { viewBox: '0 0 12 12', 'aria-hidden': 'true' }); s.append(sv('path', { d: 'M3 1.6v8.8L10.2 6z' })); return s; };
   const clockIcon = () => { const s = sv('svg', { viewBox: '0 0 16 16', 'aria-hidden': 'true' }); s.append(sv('circle', { cx: '8', cy: '8', r: '6.2', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }), sv('path', { d: 'M8 4.6V8l2.4 1.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })); return s; };
 
   // ---------------------------------------------------------------- trip data
@@ -3131,8 +3134,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     return h('span', { class: 'g-wait', 'aria-hidden': 'true' });
   }
   function thumb(ph) {
-    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir la photo de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : ''), onclick: () => openLightbox(ph.id) },
-      photoImg(ph, ''), ph.pending ? h('span', { class: 'thumb-wait', 'aria-hidden': 'true' }, clockIcon()) : null);
+    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir ' + (ph.kind === 'video' ? 'la vidéo' : 'la photo') + ' de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : ''), onclick: () => openLightbox(ph.id) },
+      photoImg(ph, ''), ph.kind === 'video' ? h('span', { class: 'thumb-play', 'aria-hidden': 'true' }, playIcon(), ph.dur ? fmtClock(ph.dur) : null) : null,
+      ph.pending ? h('span', { class: 'thumb-wait', 'aria-hidden': 'true' }, clockIcon()) : null);
   }
   function ideaList(items) {
     return h('ul', { class: 'ilist' }, items.map((it) => h('li', null,
@@ -3727,6 +3731,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 
   // ---------------------------------------------------------------- photos: upload and viewer
   const fileInput = $('photo-input');
+  if (SITE) fileInput.setAttribute('accept', 'image/*,video/*');
   let uploadCtx = null;
   function pickPhotos(ctx) {
     if (!canUpload()) { toast(uploadHint()); if (SITE) goGroup(); return; }
@@ -3739,7 +3744,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const ctx = uploadCtx;
     uploadCtx = null;
     if (!files.length || !ctx) return;
-    if (SITE) gAddPhotos(files.slice(0, 20), ctx);
+    if (SITE) gAddPhotos(files.slice(0, 30), ctx);
     else uploadPhotos(files.slice(0, 10), ctx);
   });
   function loadImage(file) {
@@ -3804,10 +3809,23 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let lbConfirm = false;
   let lbLastFocus = null;
   let lbNote = '';
+  // in the app's group: the original in Google Drive, where a video plays
+  const lbOpen = $('lb-open');
   function lbCaption() {
     if (!lbPhoto) return;
-    lb.setAttribute('aria-label', 'Photo du groupe');
-    $('lb-cap').textContent = [placeName(lbPhoto.place), lbPhoto.day ? dayLabel(lbPhoto.day) : '', 'ajoutée par ' + who(lbPhoto.by), lbPhoto.pending ? 'en attente d’envoi' : '', lbNote].filter(Boolean).join(' · ');
+    const video = lbPhoto.kind === 'video';
+    lb.setAttribute('aria-label', video ? 'Vidéo du groupe' : 'Photo du groupe');
+    const what = video ? 'vidéo' + (lbPhoto.dur ? ' de ' + fmtClock(lbPhoto.dur) : '') : SITE && lbPhoto.size ? 'original' : '';
+    $('lb-cap').textContent = [placeName(lbPhoto.place), lbPhoto.day ? dayLabel(lbPhoto.day) : '', 'ajoutée par ' + who(lbPhoto.by),
+      what && lbPhoto.size ? what + ', ' + fmtSize(lbPhoto.size) : what, lbPhoto.pending ? 'en attente d’envoi' : '', lbNote].filter(Boolean).join(' · ');
+    if (lbOpen) {
+      const can = SITE && !lbPhoto.pending && /^[A-Za-z0-9_-]{10,80}$/.test(lbPhoto.id);
+      lbOpen.hidden = !can;
+      if (can) {
+        lbOpen.href = 'https://drive.google.com/file/d/' + encodeURIComponent(lbPhoto.id) + '/view';
+        lbOpen.textContent = video ? 'Lire dans Google Drive' : 'Original dans Google Drive';
+      }
+    }
   }
   function openLightbox(id) {
     const ph = photos.find((p) => p.id === id);
@@ -3823,7 +3841,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       gFullUrl(ph).then((full) => { if (lbPhoto && lbPhoto.id === ph.id && full) lbImg.src = full; })
         .catch(() => { if (lbPhoto && lbPhoto.id === ph.id) { lbNote = 'aperçu : la photo entière s’affiche avec du réseau'; lbCaption(); } });
       lbDel.hidden = !(grp.me && ph.by === grp.me.id);
-      lbDel.textContent = ph.pending ? 'Annuler l’envoi' : 'Supprimer la photo';
+      lbDel.textContent = ph.pending ? 'Annuler l’envoi' : ph.kind === 'video' ? 'Supprimer la vidéo' : 'Supprimer la photo';
     } else {
       lbImg.src = blobUrl(ph.asset);
       lbDel.hidden = !(shared.assets && ph.by && ph.by === shared.me);
@@ -3844,6 +3862,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     lb.setAttribute('aria-label', 'Photo : ' + ph.cap);
     $('lb-cap').replaceChildren(h('span', { class: 'lb-t', text: ph.cap }), h('span', { class: 'lb-c' }, creditLinks(ph), ', via ' + photoSource(ph)));
     lbDel.hidden = true;
+    if (lbOpen) lbOpen.hidden = true;
     if (lb.hidden) lbLastFocus = document.activeElement;
     lb.hidden = false;
     $('lb-close').focus({ preventScroll: true });
@@ -4100,6 +4119,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (code === 'full') return 'Le groupe est complet : 8 personnes au plus.';
     if (code === 'busy') return 'Le script est occupé : nouvel essai dans un instant.';
     if (code === 'no_member') return 'Ton prénom n’est plus dans le groupe : choisis-le à nouveau.';
+    if (code === 'drive_full') return 'Le Google Drive du groupe est plein : il faut y faire de la place pour envoyer la suite.';
+    if (code === 'drive') return 'Google Drive n’a pas pris le fichier : nouvel essai plus tard.';
     return 'Le script du groupe a répondu par une erreur : nouvel essai plus tard.';
   }
   function grpOk() { grp.net = true; grp.err = ''; grp.syncedAt = Date.now(); }
@@ -4147,7 +4168,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (!x || typeof x.id !== 'string' || !/^[A-Za-z0-9_-]{10,80}$/.test(x.id)) return null;
     const place = x.p || x.place, day = x.d != null ? x.d : x.day, by = x.b || x.by;
     if (!PLACES[place]) return null;
-    return { id: x.id, asset: x.id, place, day: DAYS[day] ? day : '', by: typeof by === 'string' ? by : null, at: typeof x.at === 'string' ? x.at.slice(0, 30) : '', w: +x.w || 0, h: +x.h || 0 };
+    return { id: x.id, asset: x.id, place, day: DAYS[day] ? day : '', by: typeof by === 'string' ? by : null, at: typeof x.at === 'string' ? x.at.slice(0, 30) : '', w: +x.w || 0, h: +x.h || 0,
+      kind: x.k === 'video' || x.kind === 'video' ? 'video' : 'photo', size: +x.s || +x.size || 0, dur: +x.du || +x.dur || 0 };
   }
 
   // ---- my ticks: kept on the phone at once, sent to the group a moment later (several at once after a time offline)
@@ -4221,7 +4243,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (grp.state === 'on' && grp.net && grp.err !== 'forbidden') { flushTicks(); processQueue(); }
     ensureThumbs();
   }
-  function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, folderUrl: grp.folderUrl, at: grp.syncedAt || Date.now() }); }
+  function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, folderUrl: grp.folderUrl, space: grp.space, at: grp.syncedAt || Date.now() }); }
   function applyState(st) {
     grp.members = cleanMembers(st.members);
     const ticks = {};
@@ -4231,13 +4253,14 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     grp.ticks = ticks;
     grp.photos = (Array.isArray(st.photos) ? st.photos : []).map(cleanGPhoto).filter(Boolean);
     grp.folderUrl = typeof st.folderUrl === 'string' && /^https:\/\/drive\.google\.com\//.test(st.folderUrl) ? st.folderUrl : '';
+    grp.space = st.space && +st.space.limit > 0 ? { used: +st.space.used || 0, limit: +st.space.limit } : null;
     syncMyBoxes();
     setPhotos();
     renderWho();
   }
   // the photos the app shows: the group's, then mine still on the phone
   function setPhotos() {
-    const waiting = grp.pending.map((q) => ({ id: 'q:' + q.cid, cid: q.cid, asset: '', place: q.place, day: q.day, by: q.by, at: q.at, w: q.w, h: q.h, pending: true }));
+    const waiting = grp.pending.map((q) => ({ id: 'q:' + q.cid, cid: q.cid, asset: '', place: q.place, day: q.day, by: q.by, at: q.at, w: q.w, h: q.h, kind: q.kind || 'photo', size: q.size || 0, dur: q.dur || 0, name: q.name || '', pending: true }));
     photos = grp.photos.concat(waiting).sort(byTime);
     renderData();
   }
@@ -4294,12 +4317,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     thumbBusy = false;
     if (thumbAgain) { thumbAgain = false; setTimeout(ensureThumbs, 0); }
   }
+  // what the viewer shows: the preview made on the phone (2048 px; a video's poster), kept on the phone once fetched (the last 40)
   async function gFullUrl(ph) {
     if (fullUrls.has(ph.id)) return fullUrls.get(ph.id);
     let blob = null;
     if (ph.pending) {
       const q = await gdb.get('q', ph.cid).catch(() => null);
-      blob = q && q.full;
+      blob = q && (q.pv || q.full || q.th);
     } else {
       const hit = await gdb.get('ph', ph.id).catch(() => null);
       if (hit && hit.blob) blob = hit.blob;
@@ -4324,73 +4348,196 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     lsSet(GRP_FULL, used);
   }
 
-  // ---- sending photos: made smaller on the phone (1920 px and a 640 px thumbnail, without the location data), then queued
+  // ---- sending: the photo or video itself, in its original size (1 GB a photo, 5 GB a video at most), in 4 MB pieces that the
+  // group's script hands to Google Drive; the phone makes a 640 px thumbnail and a 2048 px preview (a video: a frame of it) for the app
+  const PHOTO_MAX = 1024 ** 3, VIDEO_MAX = 5 * 1024 ** 3;
+  // originals up to this size wait on the phone, even after the app is closed; bigger ones only while it stays open
+  const KEEP_MAX = 500 * 1024 ** 2;
+  const VIDEO_EXT = /\.(mp4|m4v|mov|3gp|3g2|webm|mkv|avi|mts)$/i;
+  const PHOTO_EXT = /\.(jpe?g|png|heic|heif|webp|gif|avif|bmp|tiff?|dng|raw|cr2|cr3|nef|arw|orf|rw2)$/i;
+  const bigFiles = new Map();
   const newCid = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-  async function gPrepare(file) {
-    let src = null;
-    if (window.createImageBitmap) { try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { src = null; } }
-    if (!src) { try { src = await loadImage(file); } catch (e) { src = null; } }
-    if (!src) throw { code: 'unsupported_type' };
-    const w0 = src.naturalWidth || src.width, h0 = src.naturalHeight || src.height;
-    const enc = async (max, q) => {
-      const s = Math.min(1, max / Math.max(w0, h0));
-      const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(w0 * s));
-      c.height = Math.max(1, Math.round(h0 * s));
-      const cx = c.getContext('2d');
-      cx.imageSmoothingQuality = 'high';
-      cx.drawImage(src, 0, 0, c.width, c.height);
-      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', q));
-      if (!blob) throw { code: 'unsupported_type' };
-      return { blob, w: c.width, h: c.height };
-    };
-    try { return { full: await enc(1920, 0.82), th: await enc(640, 0.72) }; } finally { if (src.close) src.close(); }
+  function mediaKind(f) {
+    if (/^video\//.test(f.type)) return 'video';
+    if (/^image\//.test(f.type)) return 'photo';
+    if (VIDEO_EXT.test(f.name || '')) return 'video';
+    if (PHOTO_EXT.test(f.name || '')) return 'photo';
+    return '';
   }
+  function extOf(f, kind) {
+    const m = /\.([a-z0-9]{1,5})$/i.exec(f.name || '');
+    if (m) return m[1].toLowerCase();
+    const t = /\/([a-z0-9]{1,5})$/i.exec(f.type || '');
+    return t ? t[1].toLowerCase().replace('quicktime', 'mov').replace('jpeg', 'jpg') : (kind === 'video' ? 'mp4' : 'jpg');
+  }
+  function mimeOf(f, kind, ext) {
+    if (/^(image|video)\/[A-Za-z0-9.+-]{1,40}$/.test(f.type || '')) return f.type;
+    const known = { heic: 'image/heic', heif: 'image/heif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', dng: 'image/x-adobe-dng', mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v', webm: 'video/webm', '3gp': 'video/3gpp', mkv: 'video/x-matroska' };
+    return known[ext] || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+  }
+  const fmtSize = (n) => (!n ? '0 Mo' : n >= 1024 ** 3 ? (n / 1024 ** 3).toFixed(1).replace('.', ',') + ' Go' : n >= 1024 ** 2 ? Math.round(n / 1024 ** 2) + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko');
+  const fmtClock = (sec) => { const t = Math.round(sec); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  async function jpegOf(src, w0, h0, max, q) {
+    const s = Math.min(1, max / Math.max(w0, h0));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w0 * s));
+    c.height = Math.max(1, Math.round(h0 * s));
+    const cx = c.getContext('2d');
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(src, 0, 0, c.width, c.height);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', q));
+    if (!blob) throw { code: 'unsupported_type' };
+    return blob;
+  }
+  // a file the phone cannot draw (HEIC in Chrome, some videos): a card with its format instead of a picture
+  async function placeholderShots(kind, f, dur) {
+    const c = document.createElement('canvas');
+    c.width = 640;
+    c.height = kind === 'video' ? 360 : 480;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#2e2820';
+    cx.fillRect(0, 0, c.width, c.height);
+    cx.fillStyle = '#efe7d3';
+    const mx = c.width / 2, my = c.height / 2 - 24;
+    if (kind === 'video') { cx.beginPath(); cx.moveTo(mx - 34, my - 42); cx.lineTo(mx + 46, my); cx.lineTo(mx - 34, my + 42); cx.closePath(); cx.fill(); } else { cx.beginPath(); cx.moveTo(mx - 70, my + 40); cx.lineTo(mx - 20, my - 30); cx.lineTo(mx + 10, my + 10); cx.lineTo(mx + 30, my - 10); cx.lineTo(mx + 70, my + 40); cx.closePath(); cx.fill(); cx.beginPath(); cx.arc(mx + 42, my - 38, 14, 0, Math.PI * 2); cx.fill(); }
+    cx.font = '700 30px sans-serif';
+    cx.textAlign = 'center';
+    cx.fillText([extOf(f, kind).toUpperCase(), fmtSize(f.size)].join(' · '), mx, c.height - 48);
+    const th = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.8));
+    return { th, pv: null, w: 0, h: 0, dur: dur || 0 };
+  }
+  async function photoShots(f) {
+    let src = null;
+    if (window.createImageBitmap) { try { src = await createImageBitmap(f, { imageOrientation: 'from-image' }); } catch (e) { src = null; } }
+    if (!src && f.size < 80 * 1024 ** 2) { try { src = await loadImage(f); } catch (e) { src = null; } }
+    if (!src) return placeholderShots('photo', f);
+    const w0 = src.naturalWidth || src.width, h0 = src.naturalHeight || src.height;
+    try { return { th: await jpegOf(src, w0, h0, 640, 0.72), pv: await jpegOf(src, w0, h0, 2048, 0.82), w: w0, h: h0, dur: 0 }; }
+    catch (e) { return placeholderShots('photo', f); }
+    finally { if (src.close) src.close(); }
+  }
+  // a video: the frame at one second, drawn by the phone; its length
+  function videoShots(f) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(f);
+      const v = document.createElement('video');
+      let over = false;
+      const end = async (ok) => {
+        if (over) return;
+        over = true;
+        clearTimeout(timer);
+        const dur = isFinite(v.duration) ? v.duration : 0;
+        let out = null;
+        if (ok && v.videoWidth) {
+          try { out = { th: await jpegOf(v, v.videoWidth, v.videoHeight, 640, 0.72), pv: await jpegOf(v, v.videoWidth, v.videoHeight, 1280, 0.8), w: v.videoWidth, h: v.videoHeight, dur }; } catch (e) { out = null; }
+        }
+        v.removeAttribute('src');
+        try { v.load(); } catch (e) { /* nothing to unload */ }
+        URL.revokeObjectURL(url);
+        resolve(out || await placeholderShots('video', f, dur));
+      };
+      const timer = setTimeout(() => end(false), 12000);
+      v.muted = true;
+      v.playsInline = true;
+      v.preload = 'auto';
+      v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(1, (v.duration || 3) / 3); } catch (e) { end(true); } }, { once: true });
+      v.addEventListener('seeked', () => end(true), { once: true });
+      v.addEventListener('error', () => end(false), { once: true });
+      v.src = url;
+    });
+  }
+  const pendingOf = (it) => ({ cid: it.cid, kind: it.kind || 'photo', place: it.place, day: it.day, at: it.at, w: it.w, h: it.h, dur: it.dur || 0, size: it.size || (it.full && it.full.size) || 0, name: it.name || '', by: it.by });
   async function gAddPhotos(files, ctx) {
     if (!canUpload()) return;
     const place = PLACES[ctx.place] ? ctx.place : '';
     if (!place) { toast('Ouvre d’abord la fiche du lieu pour y ranger la photo.'); return; }
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    toast(files.length > 1 ? 'Préparation de ' + files.length + ' photos…' : 'Préparation de la photo…', 60000);
-    let ok = 0, bad = 0;
+    toast(files.length > 1 ? 'Préparation de ' + files.length + ' fichiers…' : 'Préparation…', 60000);
+    let ok = 0, bad = 0, tooBig = 0, open = 0;
     for (const f of files) {
+      const kind = mediaKind(f);
+      if (!kind || !f.size) { bad++; continue; }
+      if (f.size > (kind === 'video' ? VIDEO_MAX : PHOTO_MAX)) { tooBig++; continue; }
       try {
-        const { full, th } = await gPrepare(f);
-        const item = { cid: newCid(), place, day: DAYS[ctx.day] ? ctx.day : '', at: new Date().toISOString(), w: full.w, h: full.h, full: full.blob, th: th.blob, by: grp.me.id };
-        await gdb.put('q', item);
-        thumbUrls.set('q:' + item.cid, URL.createObjectURL(th.blob));
-        grp.pending.push({ cid: item.cid, place: item.place, day: item.day, at: item.at, w: item.w, h: item.h, by: item.by });
+        const shots = kind === 'video' ? await videoShots(f) : await photoShots(f);
+        const ext = extOf(f, kind);
+        const item = { cid: newCid(), kind, place, day: DAYS[ctx.day] ? ctx.day : '', at: new Date().toISOString(), w: shots.w, h: shots.h, dur: Math.round(shots.dur || 0), size: f.size,
+          name: String(f.name || '').slice(0, 80), mime: mimeOf(f, kind, ext), ext, th: shots.th, pv: shots.pv, file: null, by: grp.me.id };
+        let kept = false;
+        if (f.size <= KEEP_MAX) { try { await gdb.put('q', Object.assign({}, item, { file: f })); kept = true; } catch (e) { kept = false; } }
+        if (!kept) { await gdb.put('q', item); bigFiles.set(item.cid, f); open++; }
+        thumbUrls.set('q:' + item.cid, URL.createObjectURL(shots.th));
+        grp.pending.push(pendingOf(item));
         ok++;
       } catch (e) { bad++; }
     }
     setPhotos();
     renderGroup();
     const msg = [];
-    if (ok) msg.push((ok > 1 ? ok + ' photos ajoutées' : 'Photo ajoutée') + (navigator.onLine === false ? ', envoi au groupe dès que le réseau revient.' : ', envoi au groupe…'));
-    if (bad) msg.push(bad > 1 ? bad + ' fichiers illisibles.' : 'Un fichier illisible.');
-    toast(msg.join(' '), 4500);
+    if (ok) msg.push((ok > 1 ? ok + ' fichiers ajoutés' : 'Ajouté') + (navigator.onLine === false ? ', envoi au groupe dès que le réseau revient.' : ', envoi au groupe…'));
+    if (open) msg.push('Garde l’app ouverte jusqu’à la fin de l’envoi des plus gros.');
+    if (tooBig) msg.push(tooBig > 1 ? tooBig + ' fichiers trop lourds : 1 Go par photo, 5 Go par vidéo au plus.' : 'Trop lourd : 1 Go par photo, 5 Go par vidéo au plus.');
+    if (bad) msg.push(bad > 1 ? bad + ' fichiers ne sont ni des photos ni des vidéos.' : 'Ce fichier n’est ni une photo ni une vidéo.');
+    toast(msg.join(' '), 6000);
     processQueue();
   }
-  let qBusy = false, qCurrent = '';
+  // one file to the group: start (thumbnail and preview, then a session in Drive), the pieces in order, the photo back at the end;
+  // a break resumes where Drive is, an expired session starts over
+  async function sendOne(item, data) {
+    const size = data.size, base = { member: item.by, cid: item.cid };
+    const kind = item.kind || 'photo', pv = item.pv || (item.kind ? null : item.full);
+    let r = await gcall('start', Object.assign({ probe: true }, base), 60000);
+    let stall = 0;
+    for (let round = 0; round < 8; round++) {
+      if (r.photo) return cleanGPhoto(r.photo);
+      if (r.need) {
+        const ext = item.ext || 'jpg';
+        r = await gcall('start', Object.assign({ kind, place: item.place, pn: placeName(item.place), day: item.day, at: item.at, w: item.w, h: item.h, dur: item.dur || 0, size,
+          mime: item.mime || 'image/jpeg', ext, thumb: await blobB64(item.th), preview: pv ? await blobB64(pv) : '' }, base), 180000);
+        continue;
+      }
+      let off = typeof r.received === 'number' && r.received >= 0 ? r.received : 0;
+      const step = r.chunk > 0 ? r.chunk : 4 * 1024 * 1024;
+      try {
+        while (off < size) {
+          qSent = off;
+          renderGroup();
+          const c = await gcall('chunk', Object.assign({ offset: off, data: await blobB64(data.slice(off, Math.min(size, off + step))) }, base), 300000);
+          if (c.photo) return cleanGPhoto(c.photo);
+          if (typeof c.received !== 'number' || c.received < 0) throw { code: 'server' };
+          if (c.received <= off) { if (++stall > 4) throw { code: 'drive' }; await sleep(1500 * stall); } else stall = 0;
+          off = c.received;
+        }
+      } catch (e) {
+        if (e && e.code === 'expired') { r = { need: 'start' }; continue; }
+        throw e;
+      }
+      r = await gcall('start', Object.assign({ probe: true }, base), 60000);
+    }
+    throw { code: 'drive' };
+  }
+  let qBusy = false, qCurrent = '', qSent = 0;
   async function processQueue() {
-    if (qBusy || grp.state !== 'on' || !grp.pending.length || grp.err === 'forbidden') return;
+    if (qBusy || grp.state !== 'on' || !grp.pending.length || grp.err === 'forbidden' || grp.err === 'drive_full') return;
     if (navigator.onLine === false) { grp.net = false; renderGroup(); return; }
     qBusy = true;
     let sent = 0, dropped = 0;
+    const lost = [];
     try {
       while (grp.pending.length && grp.state === 'on') {
         const q = grp.pending[0];
         qCurrent = q.cid;
+        qSent = 0;
         renderGroup();
         const item = await gdb.get('q', q.cid).catch(() => null);
-        if (item) {
+        const data = item && (item.file || bigFiles.get(q.cid) || item.full);
+        if (item && data) {
           try {
-            const r = await gcall('upload', { member: item.by, place: item.place, pn: placeName(item.place), day: item.day, at: item.at, w: item.w, h: item.h, cid: item.cid,
-              full: await blobB64(item.full), thumb: await blobB64(item.th) }, 180000);
-            const rec = cleanGPhoto(r.photo);
+            const rec = await sendOne(item, data);
             if (rec) {
               gdb.put('th', item.th, rec.id).catch(() => {});
-              gdb.put('ph', { id: rec.id, blob: item.full }).then(() => keepFull(rec.id)).catch(() => {});
+              const pv = item.pv || (item.kind ? null : item.full);
+              if (pv) gdb.put('ph', { id: rec.id, blob: pv }).then(() => keepFull(rec.id)).catch(() => {});
               const tu = thumbUrls.get('q:' + item.cid);
               if (tu) thumbUrls.set(rec.id, tu);
               const fu = fullUrls.get('q:' + item.cid);
@@ -4403,8 +4550,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
             if (!['too_large', 'bad_request', 'unsupported_type', 'no_member'].includes(e && e.code)) throw e;
             dropped++;
           }
-          await gdb.del('q', item.cid).catch(() => {});
-        }
+        } else if (item) lost.push(item.name || (item.kind === 'video' ? 'une vidéo' : 'une photo'));
+        await gdb.del('q', q.cid).catch(() => {});
+        bigFiles.delete(q.cid);
         grp.pending = grp.pending.filter((x) => x.cid !== q.cid);
         grpOk();
         setPhotos();
@@ -4414,14 +4562,19 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     qBusy = false;
     qCurrent = '';
     renderGroup();
-    if (sent || dropped) toast([sent ? (sent > 1 ? sent + ' photos envoyées au groupe.' : 'Photo envoyée au groupe.') : '', dropped ? (dropped > 1 ? dropped + ' photos refusées par le script.' : 'Une photo refusée par le script.') : ''].filter(Boolean).join(' '), 4000);
+    const msg = [];
+    if (sent) msg.push(sent > 1 ? sent + ' fichiers envoyés au groupe.' : 'Envoyé au groupe.');
+    if (dropped) msg.push(dropped > 1 ? dropped + ' fichiers refusés par le script.' : 'Un fichier refusé par le script.');
+    if (lost.length) msg.push('L’app a été fermée avant la fin : ajoute à nouveau ' + lost.join(', ') + '.');
+    if (msg.length) toast(msg.join(' '), lost.length ? 9000 : 4000);
   }
   async function gDeletePhoto(ph) {
     lbDel.disabled = true;
     try {
       if (ph.pending) {
-        if (qCurrent === ph.cid) { toast('Cette photo est en train de partir : supprime-la une fois envoyée.'); return; }
+        if (qCurrent === ph.cid) { toast('En train de partir : supprime-la une fois envoyée.'); return; }
         await gdb.del('q', ph.cid).catch(() => {});
+        bigFiles.delete(ph.cid);
         grp.pending = grp.pending.filter((x) => x.cid !== ph.cid);
         closeLightbox();
         setPhotos();
@@ -4436,14 +4589,14 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       saveState();
       closeLightbox();
       setPhotos();
-      toast('Photo supprimée pour tous. Elle reste 30 jours dans la corbeille du Drive.', 5000);
+      toast((ph.kind === 'video' ? 'Vidéo supprimée' : 'Photo supprimée') + ' pour tous. Elle reste 30 jours dans la corbeille du Drive.', 5000);
     } catch (e) {
       const c = e && e.code;
       toast(c === 'not_uploader' ? 'Seule la personne qui a ajouté la photo peut la supprimer.' : c === 'offline' || c === 'network' ? 'Pas de réseau : réessaie plus tard.' : grpErrText(c), 5000);
     } finally {
       lbDel.disabled = false;
       lbConfirm = false;
-      if (lbPhoto) lbDel.textContent = lbPhoto.pending ? 'Annuler l’envoi' : 'Supprimer la photo';
+      if (lbPhoto) lbDel.textContent = lbPhoto.pending ? 'Annuler l’envoi' : lbPhoto.kind === 'video' ? 'Supprimer la vidéo' : 'Supprimer la photo';
     }
   }
 
@@ -4468,8 +4621,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     else if (grp.syncing) parts.push('Mise à jour…');
     else if (grp.err) parts.push(grpErrText(grp.err));
     else if (grp.syncedAt) parts.push('À jour à ' + hhmm(grp.syncedAt));
-    if (qBusy && np) parts.push('envoi des photos, ' + np + ' restante' + (np > 1 ? 's' : ''));
-    else if (np) parts.push(np + (np > 1 ? ' photos en attente' : ' photo en attente'));
+    const cur = qBusy ? grp.pending.find((x) => x.cid === qCurrent) : null;
+    if (cur) {
+      const what = cur.kind === 'video' ? 'de la vidéo' : 'de la photo';
+      const big = cur.size > 8 * 1024 * 1024;
+      parts.push('envoi ' + what + (big ? ' : ' + Math.min(99, Math.floor((qSent / cur.size) * 100)) + ' %, ' + fmtSize(qSent) + ' sur ' + fmtSize(cur.size) : '') + (np > 1 ? ', puis ' + (np - 1) + ' autre' + (np > 2 ? 's' : '') : ''));
+      if (cur.size > 50 * 1024 * 1024) parts.push('garde l’app ouverte');
+    } else if (np) parts.push(np + (np > 1 ? ' fichiers en attente' : ' fichier en attente'));
     if (nt) parts.push(nt + (nt > 1 ? ' cases à envoyer' : ' case à envoyer'));
     return parts.join(' · ');
   }
@@ -4491,7 +4649,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         h('li', null, 'Ouvre ', h('a', { href: CODE_URL, target: '_blank', rel: 'noopener noreferrer', text: 'le fichier du script' }), ' et copie tout son texte.'),
         h('li', null, 'Sur ', h('a', { href: 'https://script.google.com/home/projects/create', target: '_blank', rel: 'noopener noreferrer', text: 'script.google.com' }), ', connecté à ton compte Gmail perso (les comptes d’école ferment souvent l’accès à tout le monde), un nouveau projet s’ouvre. Remplace tout son texte par celui copié, puis enregistre.'),
         h('li', { text: 'Déployer, puis Nouveau déploiement. Avec la roue dentée, choisis Application Web. Exécuter en tant que : Moi. Qui a accès : Tout le monde. Puis Déployer.' }),
-        h('li', { text: 'Autorise l’accès avec ton compte. Google prévient que l’application n’est pas validée, comme pour tout script personnel : Paramètres avancés, Accéder au projet, puis Autoriser.' }),
+        h('li', { text: 'Autorise l’accès avec ton compte. Google prévient que l’application n’est pas validée, comme pour tout script personnel : Paramètres avancés, Accéder au projet, coche les deux autorisations, puis Continuer.' }),
         h('li', { text: 'Copie l’URL de l’application Web, qui finit par /exec, et colle-la ci-dessous.' }))) : null;
     out.push(h('form', { class: 'grp-form', onsubmit: (e) => { e.preventDefault(); if (create) grpCreate(); else grpJoinLink(); } },
       steps,
@@ -4547,7 +4705,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (grp.more) {
       out.push(h('div', { class: 'grp-more' },
         grp.folderUrl ? h('a', { class: 'btn', href: grp.folderUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Les photos dans Google Drive', arrowIcon()) : null,
-        grp.folderUrl ? h('p', { class: 'grp-note', text: 'Le dossier s’ouvre pour la personne qui a installé le script, qui peut le partager depuis Google Drive.' }) : null,
+        grp.folderUrl ? h('p', { class: 'grp-note', text: 'Le dossier s’ouvre pour la personne qui a installé le script, qui peut le partager depuis Google Drive.' + (grp.space ? ' Son Drive : ' + fmtSize(grp.space.used) + ' utilisés sur ' + fmtSize(grp.space.limit) + '.' : '') }) : null,
         h('button', { type: 'button', class: 'btn btn-ghost', onclick: grpNotMe }, 'Ce n’est pas moi'),
         grp.leave
           ? h('button', { type: 'button', class: 'btn btn-danger', onclick: grpLeave }, 'Confirmer : quitter sur ce téléphone')
@@ -4588,15 +4746,15 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     });
   }
   function groupPhotosBlock(pid, pics) {
-    const out = [h('p', { class: 'sh-h' }, h('span', { text: 'Photos du groupe' }), pics.length ? h('span', { text: String(pics.length) }) : null)];
+    const out = [h('p', { class: 'sh-h' }, h('span', { text: 'Photos et vidéos du groupe' }), pics.length ? h('span', { text: String(pics.length) }) : null)];
     if (pics.length) out.push(h('div', { class: 'thumbs' }, pics.map(thumb)));
     if (grp.state !== 'on') {
-      out.push(h('p', { class: 'sh-empty', text: grp.state === 'who' ? 'Choisis ton prénom dans le groupe, puis ajoute tes photos de ce lieu.' : 'Reliez l’app au groupe pour partager vos photos de ce lieu : elles vont dans le Google Drive du groupe.' }));
+      out.push(h('p', { class: 'sh-empty', text: grp.state === 'who' ? 'Choisis ton prénom dans le groupe, puis ajoute tes photos et vidéos de ce lieu.' : 'Reliez l’app au groupe pour partager vos photos et vidéos de ce lieu : elles vont dans le Google Drive du groupe.' }));
       out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: goGroup }, grp.state === 'who' ? 'Choisir mon prénom' : 'Relier au groupe')));
       return out;
     }
-    if (!pics.length) out.push(h('p', { class: 'sh-empty', text: 'Pas encore de photo ici. Les vôtres vont dans le Google Drive du groupe, rangées par lieu.' }));
-    out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => pickPhotos({ place: pid, day: guessDay(pid) }) }, '+ Ajouter des photos')));
+    out.push(h('p', { class: 'sh-empty', text: (pics.length ? '' : 'Rien encore ici. ') + 'En taille originale dans le Google Drive du groupe, rangées par lieu : les vidéos partent mieux en wifi.' }));
+    out.push(h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => pickPhotos({ place: pid, day: guessDay(pid) }) }, '+ Photos et vidéos')));
     return out;
   }
 
@@ -4772,7 +4930,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     gdb.all('q').then((items) => {
       grp.pending = (items || []).filter((q) => q && q.cid && q.th).map((q) => {
         thumbUrls.set('q:' + q.cid, URL.createObjectURL(q.th));
-        return { cid: q.cid, place: q.place, day: q.day, at: q.at, w: q.w, h: q.h, by: q.by };
+        return pendingOf(q);
       }).sort(byTime);
       setPhotos();
       renderGroup();
