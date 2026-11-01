@@ -5231,7 +5231,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const out = [];
     ev.forEach((e) => {
       const last = out[out.length - 1];
-      if (last && last.who === e.who && last.kind === e.kind && last.kind !== 'join' && last.t0 - e.t < 3 * 3600000 && (e.kind !== 'media' || last.items[0].ph.place === e.ph.place)) { last.items.push(e); last.t0 = e.t; return; }
+      if (last && last.who === e.who && last.kind === e.kind && last.kind !== 'join' && last.t0 - e.t < 3 * 3600000) { last.items.push(e); last.t0 = e.t; return; }
       out.push({ who: e.who, kind: e.kind, t: e.t, t0: e.t, items: [e] });
     });
     return out;
@@ -5245,7 +5245,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (g.kind === 'find') return name + ' a trouvé ' + list(g.items.map((e) => itemName(e.item)));
     const v = g.items.filter((e) => e.ph.kind === 'video').length, p = g.items.length - v;
     const what = [p ? (p > 1 ? p + ' photos' : 'une photo') : '', v ? (v > 1 ? v + ' vidéos' : 'une vidéo') : ''].filter(Boolean).join(' et ');
-    return name + ' a ajouté ' + what + ' à ' + placeName(g.items[0].ph.place);
+    // the places in the order they were added
+    const places = [...new Set(g.items.slice().reverse().map((e) => placeName(e.ph.place)).filter(Boolean))];
+    const where = !places.length ? '' : places.length <= 3 ? ' à ' + list(places) : ' à ' + places.slice(0, 2).join(', ') + ' et ' + (places.length - 2) + ' autres lieux';
+    return name + ' a ajouté ' + what + where;
   }
   const feedSeen = () => +lsGet(GRP_SEEN, 0) || 0;
   function feedUnseen() { const seen = feedSeen(); return feedEvents().filter((g) => g.t > seen).length; }
@@ -5291,7 +5294,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function openFeed(g) {
     markFeedSeen();
-    if (g.kind === 'media') { openAlbum({ who: g.who, day: g.items[0].ph.day || '' }); return; }
+    if (g.kind === 'media') { const days = [...new Set(g.items.map((e) => e.ph.day || ''))]; openAlbum({ who: g.who, day: days.length === 1 ? days[0] : '' }); return; }
     if (g.kind === 'taste' || g.kind === 'find') {
       const b = ckBoxes.get(g.items[0].item);
       const grpEl = b && b.closest('.df-group');
