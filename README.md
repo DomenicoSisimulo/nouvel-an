@@ -25,11 +25,32 @@ Utilisez l'app installée plutôt que l'onglet Safari : sur iPhone, Safari peut 
 - **Itinéraire à pied** : depuis la fiche d'un lieu à voir, d'une gare ou de l'auberge, l'app trace le trajet à pied depuis votre position sur sa propre carte, sans réseau, avec la distance et le temps de marche. Il suit vos pas. Le bouton Google Maps reste à côté pour un guidage complet quand le réseau passe.
 - **Sortir** : dans la fiche de chaque ville, et sur les jours concernés, les bars, boîtes de nuit, fast-food locaux et toilettes publiques les mieux notés, avec une ligne sur chacun et une photo libre de droits du lieu ou de sa rue quand il en existe une, sinon un lien vers les photos de Google Maps. Ils sont sur la carte, avec l'itinéraire à pied sans réseau, et un lien Google Maps qui tombe pile sur l'adresse. Les symboles de la légende servent d'interrupteurs pour les masquer.
 - **Urbex** : dans la fiche de Chișinău et de Bucarest, les bâtiments abandonnés à voir depuis la rue (Casa Radio, Moara lui Assan, Hanul Solacolu…), avec photo, état actuel et itinéraire.
-- **Défis** : l'onglet à l'étoile. Les plats typiques à goûter, région par région, et les objets les plus improbables à rapporter, ville par ville, avec leurs photos. On coche au fur et à mesure, les cases restent sur chaque téléphone.
+- **Défis** : l'onglet à l'étoile. Les plats typiques à goûter, région par région, et les objets les plus improbables à rapporter, ville par ville, avec leurs photos. Chacun coche les siens ; une fois les téléphones reliés au groupe, chacun voit aussi ceux des autres.
+- **Le groupe** : dans Défis, le cadre « À plusieurs » relie vos téléphones. Chaque défi montre une pastille de couleur par personne, pleine quand c'est fait, avec un classement en haut. Dans la fiche de chaque lieu, « + Ajouter des photos » envoie vos photos dans un dossier Google Drive, rangées par lieu, et tout le monde les voit dans l'app. Voir « Créer le groupe » plus bas.
 - **Aujourd'hui** : pendant le voyage, l'app s'ouvre sur la journée en cours. Les étapes passées s'estompent et la prochaine affiche le temps restant.
 - **Mes billets** : chacun ajoute ses cartes d'embarquement et ses billets de train, en capture d'écran du QR code ou en PDF. Ils restent sur son téléphone et ne sont envoyés nulle part.
 - **Avant de partir** : la liste à cocher reste sur chaque téléphone.
 - Les boutons **Itinéraire** ouvrent Google Maps, qui a besoin de réseau, sauf si vous y avez téléchargé les villes en cartes hors connexion.
+
+## Créer le groupe (une fois, sur ordinateur, 5 minutes)
+
+Le groupe passe par un petit script installé dans le Google Drive d'un membre. Le script ne touche qu'au dossier qu'il crée lui-même, « Nouvel An 2026 – photos du groupe ».
+
+1. Ouvrez [`groupe/Code.gs`](groupe/Code.gs) dans ce dépôt et copiez tout son texte (bouton **Copy raw file**).
+2. Sur [script.google.com](https://script.google.com), connecté au compte Gmail personnel qui gardera les photos (un compte d'école ou d'entreprise ferme souvent l'accès « Tout le monde ») : **Nouveau projet**. Remplacez tout le texte par celui copié, renommez le projet « Nouvel An – groupe », puis enregistrez.
+3. **Déployer**, puis **Nouveau déploiement**. Avec la roue dentée, choisissez **Application Web**. *Exécuter en tant que* : **Moi**. *Qui a accès* : **Tout le monde**. Puis **Déployer**.
+4. **Autoriser l'accès** avec votre compte. Google affiche « Google n'a pas validé cette application », comme pour tout script personnel : **Paramètres avancés**, **Accéder à Nouvel An – groupe (non sécurisé)**, puis **Autoriser**.
+5. Copiez l'**URL de l'application Web**, qui finit par `/exec`.
+6. Dans l'app : **Défis**, **Créer le groupe**, collez l'URL, puis votre prénom. Touchez **Inviter** et envoyez le lien sur votre groupe.
+
+Les autres ouvrent le lien, ou le collent dans l'app (**Défis**, **Rejoindre avec un lien**), puis choisissent leur prénom. Sur iPhone, collez-le dans l'app installée sur l'écran d'accueil : elle ne partage pas ses données avec Safari.
+
+Hors réseau, les cases cochées et les photos attendent sur le téléphone, puis partent d'elles-mêmes. Chaque photo est réduite à 1920 pixels, environ 0,5 Mo, et perd sa position GPS ; l'original reste dans votre galerie.
+
+- Le lien d'invitation ouvre le groupe à qui l'a : gardez-le entre vous. Il n'est écrit nulle part dans ce dépôt.
+- Le dossier des photos est dans le Drive de la personne qui a installé le script, qui peut le partager aux autres depuis Google Drive. Une photo supprimée dans l'app part dans la corbeille du Drive ; seule la personne qui l'a ajoutée peut la supprimer.
+- Pour changer le script plus tard sans changer d'adresse : **Déployer**, **Gérer les déploiements**, le crayon, *Version* : **Nouvelle version**. Un nouveau déploiement donnerait une autre adresse, et il faudrait recréer le groupe.
+- Google demande l'accès au Drive parce que le script y crée son dossier et y range les photos. Pour tout couper : [myaccount.google.com/permissions](https://myaccount.google.com/permissions), « Nouvel An – groupe », **Supprimer l'accès**.
 
 ## Modifier les réglages : `config.json`
 
@@ -51,6 +72,6 @@ Gardez les virgules entre les auberges et les guillemets autour des textes : si 
 ## À savoir
 
 - Le dépôt et le site sont **publics** : quiconque a l'adresse voit l'itinéraire. N'y mettez jamais de billet, de numéro de réservation ni de pièce d'identité. Les billets se rangent dans **Mes billets**, sur chaque téléphone.
-- Les idées et les photos partagées de la version claude.ai ne sont pas dans cette app.
+- Les idées et les photos partagées de la version claude.ai ne sont pas dans cette app : ici, les photos passent par le groupe.
 - Pour mettre l'app à jour, envoyez sur GitHub les fichiers d'une nouvelle version du dossier. À la prochaine ouverture avec du réseau, l'app affiche « Une nouvelle version de l'app est prête » : touchez **Recharger**.
 - Sources : fond de carte Natural Earth ; rues, rivières, parcs et positions des adresses de sortie © les contributeurs d'OpenStreetMap (licence ODbL) ; photos de Wikimedia Commons et Flickr, créditées en bas de l'app ; polices Sofia Sans, Sofia Sans Extra Condensed et Doto sous SIL Open Font License (dossier `fonts`).
