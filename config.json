@@ -1,0 +1,10 @@
+{
+  "_aide": "Réglages de l'app, modifiables directement sur GitHub. tricount : le lien d'invitation de votre groupe Tricount (https://...). auberges : remplissez nom et adresse quand c'est réservé, et coords pour avoir l'auberge sur la carte (dans Google Maps, appui long sur l'auberge puis copiez les coordonnées, par exemple 47.0245, 28.8323). site : la page de l'auberge, jamais un lien de réservation avec vos données. nuits : les jours où vous y dormez, de j1 à j9. Une auberge sans nom n'apparaît pas.",
+  "tricount": "",
+  "auberges": [
+    { "nuits": ["j2", "j3"], "ville": "Chișinău", "nom": "", "adresse": "", "coords": "", "site": "" },
+    { "nuits": ["j5", "j6"], "ville": "Bucarest", "nom": "", "adresse": "", "coords": "", "site": "" },
+    { "nuits": ["j7"], "ville": "Brașov", "nom": "", "adresse": "", "coords": "", "site": "" },
+    { "nuits": ["j8"], "ville": "Belgrade", "nom": "", "adresse": "", "coords": "", "site": "" }
+  ]
+}
