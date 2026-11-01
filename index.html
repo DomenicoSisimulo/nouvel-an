@@ -308,6 +308,21 @@ h1, h2, h3 { text-wrap: balance; }
 .upd-t { margin: 0; font: 900 20px/1.05 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; }
 .upd-p { margin: 6px 0 0; font-size: 14px; line-height: 1.45; }
 .upd-bar { height: 6px; margin-top: 10px; border-radius: 3px; background: rgb(127 127 127 / 0.35); overflow: hidden; }
+/* the currency converter */
+.fx { max-width: 760px; margin: 0 0 22px; padding: 14px 14px 12px; border: 2px solid var(--rule); border-radius: 3px; background: var(--surface); }
+.fx[hidden] { display: none; }
+.fx-h { margin: 0; font: 900 24px/1 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; }
+.fx-sub { margin: 6px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.fx-in { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-top: 12px; }
+.fx-amt { flex: 1 1 130px; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--rule); border-radius: 2px; background: var(--bg); color: var(--ink); font: 800 24px/1.1 var(--f-body); font-variant-numeric: tabular-nums; }
+.fx-cur button { padding: 10px 11px 9px; }
+.fx-out { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; margin: 12px 0 0; padding: 0; }
+.fx-r { appearance: none; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: baseline; column-gap: 8px; width: 100%; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 2px; background: var(--bg); color: var(--ink); text-align: left; cursor: pointer; }
+.fx-r b { grid-row: 1 / span 2; font: 900 26px/1 var(--f-display); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.fx-r span { font-size: 14px; font-weight: 600; line-height: 1.2; }
+.fx-r small { font-size: 12px; line-height: 1.25; color: var(--ink-3); }
+.fx-r:hover { background: var(--surface-2); }
+.fx-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
 .upd-bar i { display: block; height: 100%; background: var(--red); }
 .upd .btn-row { margin-top: 12px; }
 .upd .btn { border-color: var(--bg); background: var(--bg); color: var(--ink); }
@@ -472,6 +487,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 /* photo viewer and toast */
 .lightbox { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; padding: calc(14px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); background: var(--overlay); color: var(--on-overlay); }
 .lightbox figure { margin: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
+.lightbox:has(.lb-reacts:not([hidden])) { grid-template-rows: minmax(0, 1fr) auto auto; }
+.lb-reacts { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+.lb-reacts[hidden] { display: none; }
+.lb-r { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 52px; height: 42px; padding: 0 12px; border: 1.5px solid rgb(255 255 255 / 0.3); border-radius: 21px; background: rgb(255 255 255 / 0.06); color: var(--on-overlay); cursor: pointer; }
+.lb-re { font: 400 21px/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.lb-r b { font: 800 14px/1 var(--f-body); font-variant-numeric: tabular-nums; }
+.lb-r[aria-pressed="true"] { border-color: var(--gold); background: rgb(227 173 58 / 0.28); }
 .lightbox img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
 .lightbox figcaption { text-align: center; font-size: 13.5px; line-height: 1.45; }
 .lightbox figcaption .lb-t { display: block; font-weight: 600; }
@@ -993,6 +1015,20 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .thumb-wait svg { width: 14px; height: 14px; }
 .thumb-play { position: absolute; left: 4px; bottom: 4px; display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px 3px 5px; border-radius: 10px; background: var(--photo-chip); color: var(--on-photo); font: 700 11px/1 var(--f-body); font-variant-numeric: tabular-nums; }
 .thumb-play svg { width: 10px; height: 10px; fill: currentColor; }
+.thumb-react { position: absolute; right: 4px; bottom: 4px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 10px; background: var(--photo-chip); color: var(--on-photo); font: 400 12px/1.25 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.thumb-react b { margin-left: 2px; font: 800 11px/1 var(--f-body); font-variant-numeric: tabular-nums; }
+.thumb-df { position: absolute; left: 4px; top: 4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); color: #1c1a16; font: 900 12px/1 var(--f-body); }
+/* challenges: the proofs in pictures */
+.df-proof { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.df-proof-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.df-proof-ph { display: block; width: 58px; padding: 2px; border-radius: 3px; background: var(--mc); }
+.df-proof-ph .thumb { border-radius: 2px; }
+.df-proof-ph .thumb-df { display: none; }
+/* the album: saving it on the phone */
+.alb-save { display: grid; gap: 8px; max-width: 62ch; margin: 4px 0 6px; }
+.alb-save .btn-row { margin: 0; }
+.alb-save-t { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.alb-save-bar { margin-top: 0; }
 .g-wait { display: block; width: 100%; height: 100%; background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface) 50%, var(--surface-2) 70%) 0 0 / 300% 100%; animation: g-wait 1.4s linear infinite; }
 @keyframes g-wait { to { background-position: -150% 0; } }
 @media (prefers-reduced-motion: reduce) { .g-wait { animation: none; } }
@@ -1700,6 +1736,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       </div>
     </div>
     <div class="tri" id="tri" hidden></div>
+    <div class="fx" id="fx" hidden></div>
     <div class="bud">
       <div class="rules">
         <article class="rule"><h3>Hébergement</h3><p>Auberges à Chișinău et à Bucarest, une nuit à Brașov, la couchette du Prietenia. Disponibilités à vérifier pendant les fêtes.</p></article>
@@ -1966,6 +2003,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 
 <div class="lightbox" id="lightbox" role="dialog" aria-label="Photo" hidden>
   <figure><img id="lb-img" alt=""><video id="lb-vid" controls playsinline preload="metadata" hidden></video><figcaption id="lb-cap"></figcaption></figure>
+  <div class="lb-reacts" id="lb-reacts" role="group" aria-label="Réagir" hidden></div>
   <button type="button" class="lb-nav lb-prev" id="lb-prev" aria-label="Précédente" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.8 4.6 7.4 12l7.4 7.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button type="button" class="lb-nav lb-next" id="lb-next" aria-label="Suivante" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 4.6 7.4 7.4-7.4 7.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div class="lb-actions"><button type="button" class="btn" id="lb-orig" hidden>Voir l’original</button><button type="button" class="btn" id="lb-save" hidden>Enregistrer</button><button type="button" class="btn" id="lb-del" hidden>Supprimer la photo</button><button type="button" class="btn" id="lb-close">Fermer</button></div>
@@ -3108,7 +3146,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let photos = [];
   let ideasReadOnly = false;
   // the installed app's group (see "the group" below): off, who (linked, name not chosen yet) or on
-  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], pending: [], tq: [], positions: {}, folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false, feedAll: false };
+  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], positions: {}, folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false, feedAll: false };
   const canWriteIdeas = () => !!shared.db && shared.canWrite !== false && !ideasReadOnly;
   const canUpload = () => (SITE ? grp.state === 'on' : !!shared.assets && !!shared.db && shared.canWrite !== false);
   const names = new Map();
@@ -3206,10 +3244,22 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (u) return h('img', { src: u, alt: alt || '', decoding: 'async' });
     return h('span', { class: 'g-wait', 'aria-hidden': 'true' });
   }
+  // the reactions on a photo: the most given emoji first, with how many
+  function reactSummary(id) {
+    const r = SITE && grp.reacts ? grp.reacts[id] : null;
+    if (!r) return null;
+    const count = {};
+    Object.values(r).forEach((x) => { count[x.e] = (count[x.e] || 0) + 1; });
+    const order = REACTS.filter((e) => count[e]).sort((a, b) => count[b] - count[a]);
+    return order.length ? { order, count, total: Object.keys(r).length } : null;
+  }
   function thumb(ph, list) {
-    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir ' + (ph.kind === 'video' ? 'la vidéo' : 'la photo') + ' de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : ''), onclick: () => openLightbox(ph.id, Array.isArray(list) ? list : null) },
+    const rs = reactSummary(ph.id);
+    return h('button', { type: 'button', class: 'thumb' + (ph.pending ? ' is-pending' : ''), 'aria-label': 'Agrandir ' + (ph.kind === 'video' ? 'la vidéo' : 'la photo') + ' de ' + (placeName(ph.place) || 'l’étape') + ', ajoutée par ' + who(ph.by) + (ph.pending ? ', en attente d’envoi' : '') + (rs ? ', ' + rs.total + (rs.total > 1 ? ' réactions' : ' réaction') : ''), onclick: () => openLightbox(ph.id, Array.isArray(list) ? list : null) },
       photoImg(ph, ''), ph.kind === 'video' ? h('span', { class: 'thumb-play', 'aria-hidden': 'true' }, playIcon(), ph.dur ? fmtClock(ph.dur) : null) : null,
-      ph.pending ? h('span', { class: 'thumb-wait', 'aria-hidden': 'true' }, clockIcon()) : null);
+      ph.pending ? h('span', { class: 'thumb-wait', 'aria-hidden': 'true' }, clockIcon()) : null,
+      rs ? h('span', { class: 'thumb-react', 'aria-hidden': 'true' }, rs.order.slice(0, 2).join(''), rs.total > 1 ? h('b', { text: String(rs.total) }) : null) : null,
+      ph.df ? h('span', { class: 'thumb-df', 'aria-hidden': 'true', title: 'Preuve : ' + itemName(ph.df) }, '★') : null);
   }
   function ideaList(items) {
     return h('ul', { class: 'ilist' }, items.map((it) => h('li', null,
@@ -3792,7 +3842,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   function renderData() {
     renderDayExtras();
     renderIdeaPins();
-    if (SITE) renderAlbum();
+    if (SITE) { renderAlbum(); renderProofs(); }
     if (sheetState && sheetState.type !== 'form' && !sheet.hidden) {
       const top = sheet.scrollTop;
       renderSheet();
@@ -3890,7 +3940,45 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     lb.setAttribute('aria-label', video ? 'Vidéo du groupe' : 'Photo du groupe');
     const what = video ? 'vidéo' + (lbPhoto.dur ? ' de ' + fmtClock(lbPhoto.dur) : '') : SITE && lbPhoto.size ? 'original' : '';
     $('lb-cap').textContent = [placeName(lbPhoto.place), lbPhoto.day ? dayLabel(lbPhoto.day) : '', 'ajoutée par ' + who(lbPhoto.by),
+      lbPhoto.df ? 'preuve : ' + itemName(lbPhoto.df) : '',
       what && lbPhoto.size ? what + ', ' + fmtSize(lbPhoto.size) : what, lbPhoto.pending ? 'en attente d’envoi' : '', lbNote].filter(Boolean).join(' · ');
+  }
+  // reactions under the photo: one emoji each, tap again to take it back
+  const lbReacts = $('lb-reacts');
+  function renderLbReacts() {
+    if (!lbReacts) return;
+    const ph = lbPhoto;
+    const on = !!(SITE && ph && !ph.pending && grp.state === 'on' && grp.me && fileId(ph.id));
+    lbReacts.hidden = !on;
+    if (!on) return;
+    const r = grp.reacts[ph.id] || {};
+    const mine = r[grp.me.id] ? r[grp.me.id].e : '';
+    const nameOf = (m) => (m === grp.me.id ? 'toi' : (grp.members.find((x) => x.id === m) || { name: 'quelqu’un' }).name);
+    lbReacts.replaceChildren(...REACTS.map((e) => {
+      const by = Object.keys(r).filter((m) => r[m].e === e).map(nameOf);
+      return h('button', { type: 'button', class: 'lb-r', 'aria-pressed': String(mine === e), 'aria-label': e + (by.length ? ' : ' + by.join(', ') : ''), title: by.join(', '),
+        onclick: (ev) => { ev.stopPropagation(); sendReact(ph, mine === e ? '' : e); } }, h('span', { class: 'lb-re', text: e }), by.length ? h('b', { text: String(by.length) }) : null);
+    }));
+  }
+  async function sendReact(ph, e) {
+    if (grp.state !== 'on' || !grp.me) return;
+    const me = grp.me.id;
+    const before = grp.reacts[ph.id] ? Object.assign({}, grp.reacts[ph.id]) : null;
+    const r = Object.assign({}, before || {});
+    if (e) r[me] = { e, at: new Date().toISOString() }; else delete r[me];
+    if (Object.keys(r).length) grp.reacts[ph.id] = r; else delete grp.reacts[ph.id];
+    renderLbReacts();
+    renderData();
+    try {
+      await gcall('react', { member: me, id: ph.id, e });
+      saveState();
+    } catch (err) {
+      if (before) grp.reacts[ph.id] = before; else delete grp.reacts[ph.id];
+      renderLbReacts();
+      renderData();
+      const c = err && err.code;
+      toast(c === 'bad_request' ? 'Le script du groupe doit être mis à jour pour les réactions : README du dépôt, « Mettre à jour le script ».' : c === 'offline' || c === 'network' ? 'Pas de réseau : la réaction n’est pas partie.' : c === 'gone' ? 'Cette photo n’est plus dans l’album.' : grpErrText(c), 6000);
+    }
   }
   let lbList = null;
   function openLightbox(id, list) {
@@ -3918,6 +4006,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     }
     lbCaption();
     lbNav();
+    renderLbReacts();
     if (lb.hidden) lbLastFocus = document.activeElement;
     lb.hidden = false;
     $('lb-close').focus({ preventScroll: true });
@@ -3935,6 +4024,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     lb.setAttribute('aria-label', 'Photo : ' + ph.cap);
     $('lb-cap').replaceChildren(h('span', { class: 'lb-t', text: ph.cap }), h('span', { class: 'lb-c' }, creditLinks(ph), ', via ' + photoSource(ph)));
     lbDel.hidden = true;
+    if (lbReacts) lbReacts.hidden = true;
     if (lb.hidden) lbLastFocus = document.activeElement;
     lb.hidden = false;
     $('lb-close').focus({ preventScroll: true });
@@ -4083,7 +4173,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     lbOrig.disabled = true;
     lbShow(dl).finally(() => { lbOrig.disabled = false; });
   });
-  const saveNoTap = () => !!(NATIVE && typeof NATIVE.saveStart === 'function') || !(navigator.canShare && navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ''));
+  // an iPhone saves in Photos through its share sheet, which needs a fresh tap; elsewhere, a download (or the Android app's gallery)
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent || '') || (/Macintosh/.test(navigator.userAgent || '') && navigator.maxTouchPoints > 1);
+  const viaShare = () => !(NATIVE && typeof NATIVE.saveStart === 'function') && isIOS() && !!(navigator.canShare && navigator.share);
+  const saveNoTap = () => !viaShare();
   async function saveBlob(blob, name) {
     if (NATIVE && typeof NATIVE.saveStart === 'function') {
       const id = NATIVE.saveStart(name, blob.type || 'application/octet-stream');
@@ -4102,7 +4195,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       return 'Enregistré dans ' + where + '.';
     }
     const file = new File([blob], name, { type: blob.type });
-    if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+    if (viaShare() && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file] }); return ''; } catch (e) { if (e && e.name === 'AbortError') return ''; }
     }
     const a = h('a', { href: URL.createObjectURL(blob), download: name });
@@ -4413,12 +4506,29 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (t && typeof t === 'object') for (const k of Object.keys(t)) if (ckBoxes.has(k) && /^[gr]-/.test(k)) out[k] = typeof t[k] === 'string' ? t[k] : '1';
     return out;
   }
+  const fileId = (v) => (typeof v === 'string' && /^[A-Za-z0-9_-]{10,80}$/.test(v) ? v : '');
   function cleanGPhoto(x) {
-    if (!x || typeof x.id !== 'string' || !/^[A-Za-z0-9_-]{10,80}$/.test(x.id)) return null;
+    if (!x || !fileId(x.id)) return null;
     const place = x.p || x.place, day = x.d != null ? x.d : x.day, by = x.b || x.by;
     if (!PLACES[place]) return null;
     return { id: x.id, asset: x.id, place, day: DAYS[day] ? day : '', by: typeof by === 'string' ? by : null, at: typeof x.at === 'string' ? x.at.slice(0, 30) : '', w: +x.w || 0, h: +x.h || 0,
-      kind: x.k === 'video' || x.kind === 'video' ? 'video' : 'photo', size: +x.s || +x.size || 0, dur: +x.du || +x.dur || 0 };
+      kind: x.k === 'video' || x.kind === 'video' ? 'video' : 'photo', size: +x.s || +x.size || 0, dur: +x.du || +x.dur || 0,
+      // its thumbnail and preview in the Drive, and the challenge it proves
+      t: fileId(x.t), v: fileId(x.v), df: typeof x.df === 'string' && ckBoxes.has(x.df) ? x.df : '' };
+  }
+  // reactions: { photo id: { member id: { e, at } } }, the app's five emojis only
+  const REACTS = ['❤️', '😂', '😮', '🔥', '👏'];
+  function cleanReacts(r) {
+    const out = {};
+    if (!r || typeof r !== 'object') return out;
+    for (const id of Object.keys(r)) {
+      if (!fileId(id) || !r[id] || typeof r[id] !== 'object') continue;
+      for (const m of Object.keys(r[id])) {
+        const x = r[id][m];
+        if (x && REACTS.includes(x.e)) (out[id] = out[id] || {})[m] = { e: x.e, at: typeof x.at === 'string' ? x.at.slice(0, 30) : '' };
+      }
+    }
+    return out;
   }
 
   // ---- my ticks: kept on the phone at once, sent to the group a moment later (several at once after a time offline)
@@ -4480,7 +4590,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     grp.syncing = true;
     renderGroup();
     try {
-      const st = await gcall('state');
+      // only what changed since the album this phone holds
+      const st = await gcall('state', { since: grp.rev || 0 });
       stLast = Date.now();
       applyState(st);
       grpOk();
@@ -4500,7 +4611,23 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const live = sharing() || Object.values(grp.positions || {}).some((x) => x.until > Date.now());
     refreshTimer = setTimeout(() => refreshState(true), live ? 20000 : 40000);
   }
-  function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, folderUrl: grp.folderUrl, space: grp.space, at: grp.syncedAt || Date.now() }); }
+  function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, reacts: grp.reacts, rev: grp.rev || 0, folderUrl: grp.folderUrl, space: grp.space, at: grp.syncedAt || Date.now() }); }
+  // the album's changes since this phone's version: added, deleted, reactions
+  function applyChanges(list) {
+    const byId = new Map(grp.photos.map((p) => [p.id, p]));
+    for (const e of list) {
+      if (!e || typeof e !== 'object') continue;
+      if (e.a === 'add') { const p = cleanGPhoto(e.rec); if (p) byId.set(p.id, p); }
+      else if (e.a === 'del' && typeof e.id === 'string') { byId.delete(e.id); delete grp.reacts[e.id]; }
+      else if (e.a === 'react' && fileId(e.id) && typeof e.m === 'string') {
+        const r = grp.reacts[e.id] || {};
+        if (REACTS.includes(e.e)) r[e.m] = { e: e.e, at: typeof e.at === 'string' ? e.at.slice(0, 30) : '' };
+        else delete r[e.m];
+        if (Object.keys(r).length) grp.reacts[e.id] = r; else delete grp.reacts[e.id];
+      }
+    }
+    grp.photos = [...byId.values()];
+  }
   function applyState(st) {
     grp.members = cleanMembers(st.members);
     const ticks = {};
@@ -4508,7 +4635,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (grp.me && grp.members.length && !grp.members.some((m) => m.id === grp.me.id)) { grp.me = null; grp.state = 'who'; saveGrp(); }
     if (grp.me) ticks[grp.me.id] = applyQueue(ticks[grp.me.id] || {});
     grp.ticks = ticks;
-    grp.photos = (Array.isArray(st.photos) ? st.photos : []).map(cleanGPhoto).filter(Boolean);
+    if (Array.isArray(st.photos)) {
+      grp.photos = st.photos.map(cleanGPhoto).filter(Boolean);
+      grp.reacts = cleanReacts(st.reacts);
+    } else if (Array.isArray(st.changes)) applyChanges(st.changes);
+    // a script from before the changes-only answers has no number: the whole album every time
+    grp.rev = typeof st.rev === 'number' && st.rev >= 0 ? st.rev : 0;
     grp.folderUrl = typeof st.folderUrl === 'string' && /^https:\/\/drive\.google\.com\//.test(st.folderUrl) ? st.folderUrl : '';
     grp.space = st.space && +st.space.limit > 0 ? { used: +st.space.used || 0, limit: +st.space.limit } : null;
     grp.positions = cleanPositions(st.positions);
@@ -4520,7 +4652,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   // the photos the app shows: the group's, then mine still on the phone
   function setPhotos() {
-    const waiting = grp.pending.map((q) => ({ id: 'q:' + q.cid, cid: q.cid, asset: '', place: q.place, day: q.day, by: q.by, at: q.at, w: q.w, h: q.h, kind: q.kind || 'photo', size: q.size || 0, dur: q.dur || 0, name: q.name || '', pending: true }));
+    const waiting = grp.pending.map((q) => ({ id: 'q:' + q.cid, cid: q.cid, asset: '', place: q.place, day: q.day, df: q.df || '', by: q.by, at: q.at, w: q.w, h: q.h, kind: q.kind || 'photo', size: q.size || 0, dur: q.dur || 0, name: q.name || '', pending: true }));
     photos = grp.photos.concat(waiting).sort(byTime);
     renderData();
   }
@@ -4563,7 +4695,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       if (found) renderData();
       while (rest.length && grp.state !== 'off' && grp.net && grp.err !== 'forbidden') {
         const batch = rest.splice(0, 12);
-        const r = await gcall('thumbs', { ids: batch }, 60000);
+        // the thumbnail's own file when known; the photo's id for a script of the previous version
+        const items = batch.map((id) => ({ id, t: (grp.photos.find((p) => p.id === id) || {}).t || '' })).filter((x) => x.t);
+        const r = await gcall('thumbs', items.length === batch.length ? { ids: batch, items } : { ids: batch }, 60000);
         const got = r.thumbs && typeof r.thumbs === 'object' ? r.thumbs : {};
         batch.forEach((id) => {
           if (typeof got[id] !== 'string') { thumbMiss.add(id); return; }
@@ -4588,7 +4722,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       const hit = await gdb.get('ph', ph.id).catch(() => null);
       if (hit && hit.blob) blob = hit.blob;
       else {
-        const r = await gcall('photo', { id: ph.id }, 90000);
+        const f = ph.v || (ph.kind === 'video' ? ph.t : ph.t ? ph.id : '');
+        const r = await gcall('photo', f ? { id: ph.id, f } : { id: ph.id }, 90000);
         if (typeof r.data !== 'string') throw { code: 'gone' };
         blob = b64Blob(r.data);
         await gdb.put('ph', { id: ph.id, blob }).catch(() => {});
@@ -4706,7 +4841,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       v.src = url;
     });
   }
-  const pendingOf = (it) => ({ cid: it.cid, kind: it.kind || 'photo', place: it.place, day: it.day, at: it.at, w: it.w, h: it.h, dur: it.dur || 0, size: it.size || (it.full && it.full.size) || 0, name: it.name || '', by: it.by });
+  const pendingOf = (it) => ({ cid: it.cid, kind: it.kind || 'photo', place: it.place, day: it.day, df: it.df || '', at: it.at, w: it.w, h: it.h, dur: it.dur || 0, size: it.size || (it.full && it.full.size) || 0, name: it.name || '', by: it.by });
   async function gAddPhotos(files, ctx) {
     if (!canUpload()) return;
     const place = PLACES[ctx.place] ? ctx.place : '';
@@ -4721,7 +4856,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       try {
         const shots = kind === 'video' ? await videoShots(f) : await photoShots(f);
         const ext = extOf(f, kind);
-        const item = { cid: newCid(), kind, place, day: DAYS[ctx.day] ? ctx.day : '', at: new Date().toISOString(), w: shots.w, h: shots.h, dur: Math.round(shots.dur || 0), size: f.size,
+        const item = { cid: newCid(), kind, place, day: DAYS[ctx.day] ? ctx.day : '', df: ctx.df && ckBoxes.has(ctx.df) ? ctx.df : '', at: new Date().toISOString(), w: shots.w, h: shots.h, dur: Math.round(shots.dur || 0), size: f.size,
           name: String(f.name || '').slice(0, 80), mime: mimeOf(f, kind, ext), ext, th: shots.th, pv: shots.pv, file: null, by: grp.me.id };
         let kept = false;
         if (f.size <= KEEP_MAX) { try { await gdb.put('q', Object.assign({}, item, { file: f })); kept = true; } catch (e) { kept = false; } }
@@ -4754,7 +4889,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       if (r.photo) return cleanGPhoto(r.photo);
       if (r.need) {
         const ext = item.ext || 'jpg';
-        r = await gcall('start', Object.assign({ kind, place: item.place, pn: placeName(item.place), day: item.day, at: item.at, w: item.w, h: item.h, dur: item.dur || 0, size,
+        r = await gcall('start', Object.assign({ kind, place: item.place, pn: placeName(item.place), day: item.day, df: item.df || '', at: item.at, w: item.w, h: item.h, dur: item.dur || 0, size,
           mime: item.mime || 'image/jpeg', ext, thumb: await blobB64(item.th), preview: pv ? await blobB64(pv) : '' }, base), 180000);
         continue;
       }
@@ -4850,6 +4985,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       }
       await gcall('delete', { member: grp.me.id, id: ph.id });
       grp.photos = grp.photos.filter((x) => x.id !== ph.id);
+      delete grp.reacts[ph.id];
       gdb.del('th', ph.id).catch(() => {});
       gdb.del('ph', ph.id).catch(() => {});
       saveState();
@@ -5017,6 +5153,34 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       const say = (m, i) => m.name + (done[i] ? ' : ' + verb : ' : pas encore');
       w.replaceChildren(...others.map((m, i) => h('span', { class: 'df-m ' + mClass(m.id) + (done[i] ? ' is-on' : ''), title: say(m, i), 'aria-hidden': 'true', text: shortName(m) })),
         h('span', { class: 'vh', text: others.map(say).join(', ') }));
+    });
+  }
+  // the proofs: under each challenge, the photos sent to prove it; mine to add once ticked
+  function proofPick(id) {
+    const b = ckBoxes.get(id);
+    const g = b && b.closest('.df-group');
+    const place = g && PLACES[g.dataset.place] ? g.dataset.place : '';
+    if (!place) return;
+    const day = today && PLACES[place].days.includes(today) ? today : guessDay(place);
+    pickPhotos({ place, day, df: id });
+  }
+  function renderProofs() {
+    if (!dfSec || !SITE) return;
+    const on = grp.state === 'on' && !!grp.me;
+    const byItem = new Map();
+    if (on) photos.forEach((p) => { if (p.df) { if (!byItem.has(p.df)) byItem.set(p.df, []); byItem.get(p.df).push(p); } });
+    dfSec.querySelectorAll('.df-item').forEach((li) => {
+      const b = li.querySelector('input[data-ck]');
+      if (!b) return;
+      const id = b.dataset.ck;
+      const list = byItem.get(id) || [];
+      const add = on && b.checked && !list.some((p) => p.by === grp.me.id);
+      let box = li.querySelector('.df-proof');
+      if (!list.length && !add) { if (box) box.remove(); return; }
+      if (!box) { box = h('div', { class: 'df-proof' }); li.append(box); }
+      box.replaceChildren(...[
+        list.length ? h('div', { class: 'df-proof-list', 'aria-label': 'Preuves en photo' }, list.map((p) => h('span', { class: 'df-proof-ph ' + mClass(p.by), title: 'Preuve de ' + (p.by === grp.me.id ? 'toi' : who(p.by)) }, thumb(p, list)))) : null,
+        add ? h('button', { type: 'button', class: 'dx-add df-proof-add', onclick: () => proofPick(id) }, '+ Photo preuve') : null].filter(Boolean));
     });
   }
   function groupPhotosBlock(pid, pics) {
@@ -5227,6 +5391,13 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       Object.keys(tk).forEach((item) => { const t = Date.parse(tk[item]); if (t) ev.push({ t, who: mid, kind: item[0] === 'g' ? 'taste' : 'find', item }); });
     });
     grp.photos.forEach((p) => { const t = Date.parse(p.at); if (p.by && p.by !== me && t) ev.push({ t, who: p.by, kind: 'media', ph: p }); });
+    // the others' reactions to my photos and videos
+    const mine = new Map(grp.photos.filter((p) => p.by === me).map((p) => [p.id, p]));
+    Object.keys(grp.reacts || {}).forEach((id) => {
+      const ph = mine.get(id);
+      if (!ph) return;
+      Object.keys(grp.reacts[id]).forEach((m) => { const x = grp.reacts[id][m], t = Date.parse(x.at); if (m !== me && t) ev.push({ t, who: m, kind: 'react', ph, e: x.e }); });
+    });
     ev.sort((a, b) => b.t - a.t);
     const out = [];
     ev.forEach((e) => {
@@ -5243,6 +5414,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (g.kind === 'join') return name + ' a rejoint le groupe';
     if (g.kind === 'taste') return name + ' a goûté ' + list(g.items.map((e) => itemName(e.item)));
     if (g.kind === 'find') return name + ' a trouvé ' + list(g.items.map((e) => itemName(e.item)));
+    if (g.kind === 'react') {
+      const es = [...new Set(g.items.map((e) => e.e))].join('');
+      const ph = g.items[0].ph;
+      return g.items.length === 1 ? name + ' a réagi ' + es + ' à ta ' + (ph.kind === 'video' ? 'vidéo' : 'photo') + (placeName(ph.place) ? ' de ' + placeName(ph.place) : '') : name + ' a réagi ' + es + ' à ' + g.items.length + ' de tes photos';
+    }
+    if (g.items.length === 1 && g.items[0].ph.df) return name + ' a prouvé « ' + itemName(g.items[0].ph.df) + ' » en ' + (g.items[0].ph.kind === 'video' ? 'vidéo' : 'photo');
     const v = g.items.filter((e) => e.ph.kind === 'video').length, p = g.items.length - v;
     const what = [p ? (p > 1 ? p + ' photos' : 'une photo') : '', v ? (v > 1 ? v + ' vidéos' : 'une vidéo') : ''].filter(Boolean).join(' et ');
     // the places in the order they were added
@@ -5295,6 +5472,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   function openFeed(g) {
     markFeedSeen();
     if (g.kind === 'media') { const days = [...new Set(g.items.map((e) => e.ph.day || ''))]; openAlbum({ who: g.who, day: days.length === 1 ? days[0] : '' }); return; }
+    if (g.kind === 'react') {
+      const list = [...new Set(g.items.map((e) => e.ph))];
+      if (list.length === 1) openLightbox(list[0].id, list);
+      else openAlbum({ who: grp.me.id, day: '' });
+      return;
+    }
     if (g.kind === 'taste' || g.kind === 'find') {
       const b = ckBoxes.get(g.items[0].item);
       const grpEl = b && b.closest('.df-group');
@@ -5400,7 +5583,106 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         h('h3', { class: 'alb-h' }, h('span', { text: k ? dayLabel(k) : 'Sans jour' }), h('small', { text: [...new Set(ps.map((p) => placeName(p.place)))].join(', ') + ' · ' + count })),
         h('div', { class: 'thumbs alb-grid' }, ps.map((p) => thumb(p, flat))));
     }) : [h('p', { class: 'sh-empty alb-empty', text: photos.length ? 'Rien avec ces filtres.' : 'Pas encore de photo : ajoutez-en depuis la fiche d’un lieu, sur la carte.' })];
-    albumSec.replaceChildren(head, ...(filters ? [filters] : []), ...body);
+    albView = flat.filter((p) => !p.pending && fileId(p.id));
+    albFiltered = !!(alb.who || alb.day);
+    albumSec.replaceChildren(head, ...(filters ? [filters] : []), ...(albView.length || saveRun.on ? [saveBar()] : []), ...body);
+  }
+
+  // ---- the album on the phone: every original, one after another into the gallery (Android app) or the downloads
+  // (computer); on a phone's share sheet (iPhone), by batches of ten, one tap each, then « Enregistrer » in the sheet
+  const GRP_SAVED = 'grp-saved';
+  let albView = [], albFiltered = false;
+  const saveRun = { on: false, stop: false, list: [], done: 0, fail: 0, bytes: 0, cur: 0, total: 0, batch: [], wait: null, again: false };
+  const saveBox = h('div', { class: 'alb-save', 'aria-live': 'polite' });
+  const savedMap = () => lsGet(GRP_SAVED, {}) || {};
+  function markSaved(ids) {
+    const m = savedMap();
+    ids.forEach((id) => { m[id] = 1; });
+    lsSet(GRP_SAVED, m);
+  }
+  function saveBar() {
+    const btn = (t, fn, cls) => h('button', { type: 'button', class: 'btn' + (cls ? ' ' + cls : ''), onclick: fn }, t);
+    const r = saveRun;
+    if (r.on) {
+      const pct = r.total ? Math.min(100, ((r.bytes + r.cur) / r.total) * 100) : 0;
+      const kids = [h('p', { class: 'alb-save-t', text: r.wait ? (r.batch.length > 1 ? r.batch.length + ' fichiers prêts' : '1 fichier prêt') + ' : touche Enregistrer, puis « Enregistrer » dans le menu'
+        : 'Enregistrement : ' + Math.min(r.list.length, r.done + 1) + ' sur ' + r.list.length + ', ' + fmtSize(r.bytes + r.cur) + ' sur ' + fmtSize(r.total) + '. Garde l’app ouverte.' }),
+        h('div', { class: 'upd-bar alb-save-bar', 'aria-hidden': 'true' }, h('i', { style: 'width:' + pct.toFixed(1) + '%' })),
+        h('div', { class: 'btn-row' }, r.wait ? btn('Enregistrer', shareBatch, 'btn-primary') : null, btn('Arrêter', () => { r.stop = true; if (r.wait) { const w = r.wait; r.wait = null; w(); } renderSaveBar(); }, 'btn-ghost'))];
+      saveBox.replaceChildren(...kids.filter(Boolean));
+      return saveBox;
+    }
+    const done = savedMap();
+    const todo = albView.filter((p) => !done[p.id]);
+    const size = (xs) => xs.reduce((n, p) => n + (p.size || 0), 0);
+    const what = (n) => n + (n > 1 ? ' fichiers' : ' fichier');
+    if (!todo.length) {
+      saveBox.replaceChildren(h('p', { class: 'alb-save-t', text: (albFiltered ? 'Ceux-ci sont' : 'Tout est') + ' déjà enregistré sur ce téléphone.' }),
+        h('div', { class: 'btn-row' }, btn('Les réenregistrer', () => saveAll(albView, true), 'btn-ghost')));
+      return saveBox;
+    }
+    const left = albView.length - todo.length;
+    saveBox.replaceChildren(h('div', { class: 'btn-row' }, btn((albFiltered ? 'Enregistrer ces ' + todo.length : 'Tout enregistrer') + ' sur le téléphone', () => saveAll(todo, false))),
+      h('p', { class: 'alb-save-t', text: what(todo.length) + ', ' + fmtSize(size(todo)) + ' en taille originale' + (left ? ' (' + left + ' déjà ' + (left > 1 ? 'enregistrés' : 'enregistré') + ')' : '') + '. ' + (albFiltered ? '' : 'Choisis un jour ou une personne pour n’en enregistrer qu’une partie. ') + 'Mieux en wifi.' }));
+    return saveBox;
+  }
+  function renderSaveBar() { saveBar(); }
+  async function shareBatch() {
+    const r = saveRun;
+    if (!r.wait || !r.batch.length) return;
+    const files = r.batch.map((x) => new File([x.blob], mediaName(x.ph, x.blob.type), { type: x.blob.type }));
+    try {
+      await navigator.share({ files });
+      markSaved(r.batch.map((x) => x.ph.id));
+      r.batch = [];
+      const w = r.wait;
+      r.wait = null;
+      w();
+    } catch (e) {
+      // cancelled: the batch waits for another tap
+      if (!e || e.name !== 'AbortError') toast('Le menu de partage n’a pas pu s’ouvrir : réessaie.', 5000);
+    }
+    renderSaveBar();
+  }
+  async function saveAll(list, again) {
+    const r = saveRun;
+    if (r.on || !list.length) return;
+    if (grp.state !== 'on' || !grp.net) { toast('Il faut du réseau pour charger les originaux.'); return; }
+    const share = !saveNoTap();
+    Object.assign(r, { on: true, stop: false, list: list.slice(), done: 0, fail: 0, bytes: 0, cur: 0, total: list.reduce((n, p) => n + (p.size || 0), 0), batch: [], wait: null, again });
+    keepAwake(true);
+    renderSaveBar();
+    const waitTap = () => new Promise((res) => { r.wait = res; renderSaveBar(); });
+    for (const ph of r.list) {
+      if (r.stop) break;
+      r.cur = 0;
+      renderSaveBar();
+      try {
+        const blob = await gDownload({ ph, get stop() { return r.stop; } }, (n) => { r.cur = n; renderSaveBar(); });
+        if (share) {
+          r.batch.push({ ph, blob });
+          if (r.batch.length >= 10 || r.batch.reduce((n, x) => n + x.blob.size, 0) >= 150 * 1024 * 1024) await waitTap();
+        } else {
+          await saveBlob(blob, mediaName(ph, blob.type));
+          markSaved([ph.id]);
+        }
+        r.done++;
+        r.bytes += ph.size || blob.size;
+        r.cur = 0;
+      } catch (e) {
+        if (e && e.code === 'stopped') break;
+        r.fail++;
+        if (e && (e.code === 'offline' || e.code === 'network')) { toast('Plus de réseau : l’enregistrement s’arrête, il reprendra là où il en est.', 6000); break; }
+      }
+    }
+    if (share && r.batch.length && !r.stop) await waitTap();
+    keepAwake(false);
+    const n = r.done - (share ? r.batch.length : 0);
+    r.on = false;
+    r.batch = [];
+    r.wait = null;
+    renderAlbum();
+    toast(n ? (n > 1 ? n + ' fichiers enregistrés' : '1 fichier enregistré') + (NATIVE && typeof NATIVE.saveStart === 'function' ? ' dans la galerie, dossier Nouvel An.' : '.') + (r.fail ? ' ' + r.fail + ' n’ont pas pu l’être : réessaie plus tard.' : '') : 'Rien d’enregistré.', 7000);
   }
 
   // ---- joining, leaving
@@ -5443,6 +5725,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       grp.members = [];
       grp.ticks = {};
       grp.photos = [];
+      grp.reacts = {};
+      grp.rev = 0;
       grp.tq = [];
       if (grp.url) { grp.pending = []; gdb.clear('q').catch(() => {}); }
       lsSet(GRP_TQ, null);
@@ -5517,7 +5801,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function grpLeave() {
     if (sharing()) stopShare(true);
-    Object.assign(grp, { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], pending: [], tq: [], folderUrl: '', syncedAt: 0, err: '', more: false, leave: false, showLink: false, setup: null, iosHint: false });
+    Object.assign(grp, { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], folderUrl: '', syncedAt: 0, err: '', more: false, leave: false, showLink: false, setup: null, iosHint: false });
     [GRP_KEY, GRP_STATE, GRP_TQ, GRP_WAS, GRP_FULL, GRP_SEEN, GRP_SHARE, GRP_UNSHARE].forEach((k) => lsSet(k, null));
     unsharePending = false;
     renderFriends();
@@ -5951,7 +6235,12 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         ckSaved[id] = b.checked;
         ckStore();
         ckRender();
-        if (b.dataset.dfg) grpTick(id, b.checked);
+        if (b.dataset.dfg) {
+          grpTick(id, b.checked);
+          renderProofs();
+          // a challenge done: a photo to prove it, if wanted
+          if (b.checked && grp.state === 'on' && !photos.some((p) => p.df === id && grp.me && p.by === grp.me.id)) toast('Coché. Une photo comme preuve ?', 6000, { onclick: () => proofPick(id), text: 'Ajouter' });
+        }
       });
     });
     ckRender();
@@ -6070,6 +6359,76 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     store('readonly').then((st) => req(st.getAll())).then((all) => { tickets = all || []; render(); })
       .catch(() => { status.textContent = APP ? 'Les billets ne peuvent pas être enregistrés sur ce téléphone.' : 'Ce navigateur ne peut pas garder de billets. Ouvrez l’app installée sur l’écran d’accueil.'; render(); });
   }
+
+  // ---------------------------------------------------------------- currencies, offline: the last rates kept on the phone
+  // euro rates from a free daily feed (fawazahmed0/exchange-api on jsDelivr); the Transnistrian rouble follows the dollar at
+  // its official rate (16.1 roubles for 1 dollar); the rates of the build stand in until the phone has seen the network
+  (() => {
+    const box = $('fx');
+    if (!box) return;
+    const CUR = [
+      { k: 'EUR', n: 'euros', w: 'France' },
+      { k: 'MDL', n: 'lei moldaves', w: 'Moldavie' },
+      { k: 'PRB', n: 'roubles de Transnistrie', w: 'Transnistrie, en espèces' },
+      { k: 'RON', n: 'lei roumains', w: 'Roumanie' },
+      { k: 'RSD', n: 'dinars serbes', w: 'Serbie' },
+    ];
+    const PRB_USD = 16.1;
+    const BUILT = { date: '2026-10-31', eur: { mdl: 20.0686, ron: 5.3394, rsd: 117.4863, usd: 1.1162 } };
+    const FEEDS = ['https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json', 'https://latest.currency-api.pages.dev/v1/currencies/eur.json'];
+    const rates = () => {
+      const kept = lsGet('fx', null);
+      const src = kept && kept.eur && typeof kept.date === 'string' && kept.date >= BUILT.date ? kept : BUILT;
+      const e = src.eur;
+      return { date: src.date, r: { EUR: 1, MDL: e.mdl, RON: e.ron, RSD: e.rsd, PRB: PRB_USD * e.usd } };
+    };
+    let from = CUR.some((c) => c.k === lsGet('fx-from', '')) ? lsGet('fx-from', 'EUR') : 'EUR';
+    const amount = h('input', { class: 'fx-amt', id: 'fx-amt', inputmode: 'decimal', autocomplete: 'off', value: '10', 'aria-label': 'Montant à convertir' });
+    const seg = h('div', { class: 'grp-seg fx-cur', role: 'group', 'aria-label': 'Devise du montant' });
+    const out = h('ul', { class: 'fx-out', 'aria-live': 'polite' });
+    const note = h('p', { class: 'fx-note' });
+    const num = () => parseFloat(String(amount.value).replace(/[\s\u202f\u00a0]/g, '').replace(',', '.'));
+    const fmt = (v) => v.toLocaleString('fr-FR', { maximumFractionDigits: v >= 100 ? 0 : 2 });
+    function render() {
+      const { date, r } = rates();
+      seg.replaceChildren(...CUR.map((c) => h('button', { type: 'button', 'aria-pressed': String(c.k === from), onclick: () => { from = c.k; lsSet('fx-from', from); render(); } }, c.k)));
+      const v = num();
+      out.replaceChildren(...CUR.filter((c) => c.k !== from).map((c) => {
+        const x = isFinite(v) ? (v / r[from]) * r[c.k] : NaN;
+        return h('li', null, h('button', { type: 'button', class: 'fx-r', 'aria-label': (isFinite(x) ? fmt(x) : '—') + ' ' + c.n + ' : convertir à partir de cette devise', onclick: () => { if (isFinite(x)) amount.value = fmt(x).replace(/[\s\u202f\u00a0]/g, ''); from = c.k; lsSet('fx-from', from); render(); } },
+          h('b', { text: isFinite(x) ? fmt(x) : '—' }), h('span', { text: c.n }), h('small', { text: c.w })));
+      }));
+      const d = new Date(date + 'T12:00:00Z');
+      note.textContent = 'Taux du ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/^1 /, '1er ') + ', mis à jour dès qu’il y a du réseau ; les bureaux de change prennent leur marge. Le rouble de Transnistrie suit le dollar (16,1 roubles pour 1 dollar) : il ne s’obtient et ne se dépense que là-bas, en espèces.';
+    }
+    amount.addEventListener('input', render);
+    amount.addEventListener('focus', () => amount.select());
+    box.replaceChildren(h('p', { class: 'fx-h', text: 'Convertisseur' }), h('p', { class: 'fx-sub', text: 'Sans réseau, avec les derniers taux enregistrés. Touche un résultat pour partir de cette devise.' }),
+      h('div', { class: 'fx-in' }, amount, seg), out, note);
+    box.hidden = false;
+    render();
+    async function update() {
+      const kept = lsGet('fx', null);
+      if (navigator.onLine === false || (kept && Date.now() - (+kept.got || 0) < 6 * 3600000)) return;
+      for (const u of FEEDS) {
+        try {
+          const res = await fetch(u, { cache: 'no-cache', credentials: 'omit' });
+          if (!res.ok) continue;
+          const j = await res.json();
+          const e = j && j.eur;
+          if (!e || !/^\d{4}-\d{2}-\d{2}$/.test(j.date || '')) continue;
+          // a feed gone wrong does not replace good rates
+          const sane = e.mdl > 5 && e.mdl < 80 && e.ron > 2 && e.ron < 15 && e.rsd > 50 && e.rsd < 300 && e.usd > 0.5 && e.usd < 2;
+          if (!sane) continue;
+          lsSet('fx', { date: j.date, got: Date.now(), eur: { mdl: e.mdl, ron: e.ron, rsd: e.rsd, usd: e.usd } });
+          render();
+          return;
+        } catch (err) { /* offline, or the feed out of reach: the rates kept */ }
+      }
+    }
+    update();
+    window.addEventListener('online', update);
+  })();
 
   // ---------------------------------------------------------------- tab bar (phones, tablets): jump between the parts of the app, the current one lit
   const tabbar = $('tabbar');
