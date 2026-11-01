@@ -12,7 +12,7 @@ Ce dossier est l'app du voyage, prête pour GitHub Pages. Une fois en ligne, cha
 ## Installer l'app sur le téléphone
 
 - **iPhone** : ouvrez l'adresse dans **Safari**, touchez **Partager**, puis **Sur l'écran d'accueil**, puis **Ajouter**.
-- **Android** : ouvrez l'adresse dans **Chrome**, menu **⋮**, puis **Installer l'application** (ou **Ajouter à l'écran d'accueil**).
+- **Android** : l'app Android se télécharge sur la page [`android/`](android/) du site (l'adresse du site suivie de `android/`), à envoyer telle quelle au groupe. Elle se met ensuite à jour toute seule : à chaque nouvelle version publiée ici, elle propose **Mettre à jour**, vérifie le fichier, et Android l'installe par-dessus en gardant billets, cases et groupe. La première fois, Android demande d'autoriser l'app à installer sa mise à jour. À défaut, Chrome installe aussi l'app web : menu **⋮**, puis **Installer l'application**.
 
 Ouvrez l'app une première fois avec du wifi : elle enregistre tout sur le téléphone, environ 11 Mo. Ensuite, elle s'ouvre même en mode avion.
 
