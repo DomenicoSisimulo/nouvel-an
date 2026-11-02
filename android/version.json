@@ -1,9 +1,9 @@
 {
-  "code": 439142,
-  "name": "2026.11.01",
-  "built": "2026-11-01T23:02:39.927Z",
+  "code": 439891,
+  "name": "2026.11.02",
+  "built": "2026-11-02T11:31:24.878Z",
   "size": 10876129,
-  "sha256": "0b09d7b110e981aa05b1e1350c25f8553fbab0877b818df0b2f9fb713c91eb17",
-  "file": "nouvel-an-439142.apk",
-  "notes": "Sans réseau, tes réactions et ta position partagée attendent sur le téléphone et partent dès que le réseau revient."
+  "sha256": "46b1b884d6bb773441e46df909ce798f2d1b60c99a1c8c3fb35e91431753edfe",
+  "file": "nouvel-an-439891.apk",
+  "notes": "Touche une ville : tous ses lieux et adresses s'affichent d'un coup sur la carte, sans zoomer."
 }

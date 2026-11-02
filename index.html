@@ -656,6 +656,11 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .sp-air .sp-glyph { fill: var(--on-air); }
 .sp-name { display: none; font-size: 11.5px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: var(--map-halo); stroke-width: 3px; stroke-linejoin: round; }
 .map.is-near .sp-name { display: inline; }
+.map .spot-mk.is-focus .sp-name { display: inline; }
+.map .spot-mk.is-crowd-name .sp-name { display: none; }
+.sp-lead { stroke: var(--ink); stroke-width: 1.3px; opacity: 0.55; pointer-events: none; }
+.sp-true { fill: var(--ink); stroke: var(--map-halo); stroke-width: 1.2px; pointer-events: none; }
+.spot-mk:not(.is-moved) .sp-lead, .spot-mk:not(.is-moved) .sp-true { display: none; }
 .spot-mk:focus-visible .sp-badge { stroke: var(--focus); stroke-width: 3px; }
 .sp-ping { fill: none; stroke: var(--ink); stroke-width: 2px; opacity: 0; transform-box: fill-box; transform-origin: center; }
 .spot-mk.is-ping .sp-ping { animation: ping 1.1s ease-out infinite; }
@@ -2222,7 +2227,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       g.addEventListener('click', (e) => { if (pick || suppressClick) return; e.stopPropagation(); openSpot(pid, i); });
       g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSpot(pid, i); } });
       spotLayer.append(g);
-      const m = makeMark(g, { x, y, lo: 0, hi: SPOT_HI, spot: true, place: pid, sub: i });
+      const m = makeMark(g, { x, y, lo: 0, hi: SPOT_HI, spot: true, place: pid, sub: i, nx: 14 });
       marks.push(m);
       spotMarks.push(m);
     });
@@ -2248,7 +2253,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       g.addEventListener('click', (e) => { if (pick || suppressClick) return; e.stopPropagation(); openOut(pid, i); });
       g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openOut(pid, i); } });
       outLayer.append(g);
-      const m = makeMark(g, { x, y, lo: 0, hi: OUT_HI, out: true, kind: o.c, place: pid, oi: i });
+      const m = makeMark(g, { x, y, lo: 0, hi: OUT_HI, out: true, kind: o.c, place: pid, oi: i, nx: 12 });
       marks.push(m);
       outMarks.push(m);
     });
@@ -2341,6 +2346,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let raf = 0;
   let tvState = null;
   let focusOn = false;
+  // the city opened last: every one of its places and addresses stays on the map, only names give way
+  let focusPlace = '';
+  const FOCUS_HI = 0.2;
   let manual = false;
   let current = null;
   let pick = false;
@@ -2357,6 +2365,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     else p.r += 30; // zoom buttons
     const wb = document.getElementById('walkbar');
     if (wb && !wb.hidden) p.b += wb.offsetHeight + 10;
+    const rc = document.getElementById('recenter');
+    if (rc && !rc.hidden && stacked.matches) p.t = Math.max(p.t, rc.offsetTop + rc.offsetHeight + 16);
     return p;
   }
   function fit(name) { return fitBox(MAP.views[name]); }
@@ -2378,8 +2388,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const s = upp.toFixed(4);
     svg.classList.toggle('is-far', upp > 2.6);
     svg.classList.toggle('is-near', upp < SPOT_NEAR);
-    mapCard.classList.toggle('has-spots', upp < SPOT_HI);
-    mapCard.classList.toggle('has-out', upp < OUT_HI && outMarks.length > 0);
+    const fp = upp < FOCUS_HI ? focusPlace : '';
+    mapCard.classList.toggle('has-spots', upp < SPOT_HI || !!fp);
+    mapCard.classList.toggle('has-out', (upp < OUT_HI || outMarks.some((m) => m.place === fp)) && outMarks.length > 0);
     const streets = upp < OSM_ON;
     if (streets && !osmBuilt) buildOsm();
     svg.classList.toggle('o1', streets);
@@ -2390,6 +2401,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     for (const m of marks) {
       // a focused day shows its own stops; other airports and border posts step aside
       let on = m.forced || (upp >= m.lo && upp < m.hi && !(focusOn && m.transit));
+      const foc = !!(fp && m.place === fp);
+      if (foc) on = true;
+      if (m.place) { m.el.classList.toggle('is-focus', foc); if (!foc && (m.dx || m.dy)) setOff(m, 0, 0); }
       if (m.out && !outShown.has(m.kind) && !m.el.classList.contains('is-ping')) on = false;
       if (m.osm) {
         on = on && Math.abs(m.x - c.cx) < mx && Math.abs(m.y - c.cy) < my;
@@ -2398,7 +2412,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         m.on = on;
       }
       m.el.classList.toggle('is-off', !on);
-      if (on) m.el.setAttribute('transform', `translate(${m.x},${m.y}) scale(${s})${m.r ? ` rotate(${m.r})` : ''}`);
+      if (on) m.el.setAttribute('transform', `translate(${m.x},${m.y}) scale(${s})${m.r ? ` rotate(${m.r})` : ''}${offOf(m)}`);
     }
     if (patTr) patTr.setAttribute('patternTransform', `scale(${s}) rotate(45)`);
     if (tvState) traveler.setAttribute('transform', `translate(${tvState.x},${tvState.y}) scale(${s}) rotate(${tvState.ang})`);
@@ -2433,17 +2447,136 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     });
     return l === Infinity ? { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 } : { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t };
   }
+  // a place's name on the right of its symbol, or on the left when the right is taken
+  function nameLeft(m, left) {
+    const t = m.nx && m.el.querySelector('.sp-name');
+    if (!t || m.left === left) return;
+    m.left = left;
+    t.setAttribute('x', String(left ? -m.nx : m.nx));
+    if (left) t.setAttribute('text-anchor', 'end'); else t.removeAttribute('text-anchor');
+  }
+  // ---- the city on show: every symbol stays, those pressed together move apart, each with a thin line to its place
+  function offOf(m) {
+    if (!m.dx && !m.dy) return '';
+    // zooming in spreads the places by itself: the offsets shrink until the next layout
+    const k = Math.min(1, upp / m.du);
+    if (m.lead) { m.lead.setAttribute('x2', (-m.dx * k).toFixed(1)); m.lead.setAttribute('y2', (-m.dy * k).toFixed(1)); m.dot.setAttribute('cx', (-m.dx * k).toFixed(1)); m.dot.setAttribute('cy', (-m.dy * k).toFixed(1)); }
+    return ` translate(${(m.dx * k).toFixed(1)},${(m.dy * k).toFixed(1)})`;
+  }
+  function setOff(m, dx, dy) {
+    const moved = Math.hypot(dx, dy) >= 2.5;
+    m.dx = moved ? dx : 0;
+    m.dy = moved ? dy : 0;
+    m.du = upp;
+    if (moved && !m.lead) {
+      m.lead = sv('line', { class: 'sp-lead', x1: '0', y1: '0' });
+      m.dot = sv('circle', { class: 'sp-true', r: '2.6' });
+      m.el.insertBefore(m.dot, m.el.firstChild);
+      m.el.insertBefore(m.lead, m.el.firstChild);
+    }
+    m.el.classList.toggle('is-moved', moved);
+    const hitC = m.el.querySelector('.sp-hit');
+    // pressed together, each symbol answers to its own taps
+    if (hitC) hitC.setAttribute('r', moved ? String(m.out ? 11 : 12) : String(m.out ? 14 : 15));
+  }
+  function spreadFocus() {
+    const fm = marks.filter((m) => m.place && m.el.classList.contains('is-focus') && !m.el.classList.contains('is-off'));
+    if (!cam || fm.length < 2) { fm.forEach((m) => setOff(m, 0, 0)); return; }
+    const { W, H } = boxSize();
+    const hh = (cam.w * H) / W;
+    const x0 = cam.cx - cam.w / 2, y0 = cam.cy - hh / 2;
+    // where symbols may go: off the day strip, the legend and the buttons
+    const pd = pads();
+    const lim = { l: 6, r: W - Math.max(6, pd.r - 10), t: Math.max(6, pd.t - 14), b: H - Math.max(6, pd.b - 20) };
+    const pts = fm.map((m, i) => {
+      const px = (m.x - x0) / upp, py = (m.y - y0) / upp;
+      // places to see hold their ground; bars, clubs, food and toilets make way
+      return { m, i, px, py, x: px, y: py, r: (m.out ? 8.5 : 10) + 2, w: m.out ? 1 : 0.3 };
+    });
+    for (let it = 0; it < 240; it++) {
+      let over = false;
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const a = pts[i], b = pts[j];
+          let dx = b.x - a.x, dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          const need = a.r + b.r;
+          if (d >= need - 0.05) continue;
+          over = true;
+          // on the very same spot: around it, at the golden angle
+          if (d < 0.01) { const ang = (a.i + b.i * 2.39996) % (2 * Math.PI); dx = Math.cos(ang); dy = Math.sin(ang); d = 1; }
+          const push = (need - d) / d, wa = a.w / (a.w + b.w), wb = b.w / (a.w + b.w);
+          a.x -= dx * push * wa; a.y -= dy * push * wa;
+          b.x += dx * push * wb; b.y += dy * push * wb;
+        }
+      }
+      // early on, a pull back towards the real place keeps the bunch tight
+      if (it < 120) for (const q of pts) { q.x += (q.px - q.x) * 0.04; q.y += (q.py - q.y) * 0.04; }
+      for (const q of pts) { q.x = Math.min(lim.r - q.r, Math.max(lim.l + q.r, q.x)); q.y = Math.min(lim.b - q.r, Math.max(lim.t + q.r, q.y)); }
+      if (!over && it >= 120) break;
+    }
+    const s = upp.toFixed(4);
+    for (const q of pts) {
+      setOff(q.m, q.x - q.px, q.y - q.py);
+      q.m.el.setAttribute('transform', `translate(${q.m.x},${q.m.y}) scale(${s})${offOf(q.m)}`);
+    }
+  }
   function declutter() {
     const shown = marks.filter((m) => !m.el.classList.contains('is-off'));
-    shown.forEach((m) => m.el.classList.remove('is-crowd'));
+    shown.forEach((m) => { m.el.classList.remove('is-crowd', 'is-crowd-name'); nameLeft(m, false); });
+    spreadFocus();
     const placed = [];
+    const rb = (r) => ({ l: r.left + 1, t: r.top + 1, r: r.right - 1, b: r.bottom - 1 });
+    const hit = (bx, own) => placed.some((o) => o !== own && bx.l < o.r && bx.r > o.l && bx.t < o.b && bx.b > o.t);
+    // a name is not cut by the edge of the map: it goes to the other side of its symbol
+    const mr = box.getBoundingClientRect();
+    const inMap = (q) => q.l >= mr.left && q.r <= mr.right && q.t >= mr.top && q.b <= mr.bottom;
+    const fits = (q, own) => inMap(q) && !hit(q, own);
+    // the city's symbols first: they all stay, the rest makes room around them
+    const own = new Map();
+    shown.forEach((m) => {
+      if (!m.place || !m.el.classList.contains('is-focus')) return;
+      const b = m.el.querySelector('.sp-badge');
+      if (!b) return;
+      const bx = rb(b.getBoundingClientRect());
+      own.set(m, bx);
+      placed.push(bx);
+    });
+    const nameBox = (m) => rb(m.el.querySelector('.sp-name').getBoundingClientRect());
+    // what floats over the map: nothing is written under it
+    document.querySelectorAll('.map-card .strip, .map-card .legend, .map-card .mapctl, .map-card .recenter, .map-card .walkbar, .map-card .pickbar, .map-card .sheet').forEach((el) => {
+      if (el.hidden || !el.offsetParent) return;
+      const r = el.getBoundingClientRect();
+      if (r.width && r.height) placed.push({ l: r.left - 2, t: r.top - 2, r: r.right + 2, b: r.bottom + 2 });
+    });
     shown.map((m) => ({ m, p: priority(m) })).sort((a, b) => b.p - a.p).forEach(({ m }) => {
       if (m.me) return; // the blue dot sits over the map without pushing anything away
+      const named = !!(m.nx && getComputedStyle(m.el.querySelector('.sp-name')).display !== 'none');
+      if (own.has(m)) {
+        // the symbol is there already: its name on the right, else on the left, else not at all
+        if (!named) return;
+        let nb = nameBox(m);
+        if (fits(nb, own.get(m))) { placed.push(nb); return; }
+        nameLeft(m, true);
+        nb = nameBox(m);
+        if (fits(nb, own.get(m))) { placed.push(nb); return; }
+        nameLeft(m, false);
+        m.el.classList.add('is-crowd-name');
+        return;
+      }
       const r = rectOf(m);
       if (!r.width && !r.height) return;
-      const bx = { l: r.left + 1, t: r.top + 1, r: r.right - 1, b: r.bottom - 1 };
-      if (placed.some((o) => bx.l < o.r && bx.r > o.l && bx.t < o.b && bx.b > o.t)) m.el.classList.add('is-crowd');
-      else placed.push(bx);
+      let bx = rb(r);
+      if (named ? fits(bx) : !hit(bx)) { placed.push(bx); return; }
+      if (named) {
+        nameLeft(m, true);
+        const lx = rb(rectOf(m));
+        if (fits(lx)) { placed.push(lx); return; }
+        nameLeft(m, false);
+        // against the edge on both sides: as before, on the right
+        if (!hit(bx)) { placed.push(bx); return; }
+      }
+      m.el.classList.add('is-crowd');
     });
   }
   let dTimer = 0;
@@ -2507,7 +2640,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   const recenterBtn = $('recenter');
   function goManual() { if (!manual) { manual = true; recenterBtn.hidden = false; } }
-  function leaveManual() { manual = false; recenterBtn.hidden = true; }
+  function leaveManual() { manual = false; recenterBtn.hidden = true; focusPlace = ''; }
   // test harness hook (only when a test page defines window.__mapTest)
   if (window.__mapTest) window.__mapTest.go = (lon, lat, u) => { const [x, y] = llToMap(lon, lat); goManual(); flyTo(clampCam({ cx: x, cy: y, w: boxSize().W * u })); };
   if (window.__mapTest) window.__mapTest.walkState = () => (walk ? { state: walk.state, dist: walk.res && walk.res.dist, pts: walk.res && walk.res.pts ? walk.res.pts.length : 0, bar: document.getElementById('walkbar').textContent } : null);
@@ -3344,11 +3477,10 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     ping(pid, 2600);
     if (zoom) zoomToPlace(pid);
   }
-  // a city fills the map: its stop and its places to see, close enough to read the streets
-  const PLACE_UPP = 0.012;
+  // a city fills the map: its stop, its places to see, its bars, clubs, fast food and toilets, and its hostel, all of them
   function zoomToPlace(pid) {
-    const p = PLACES[pid];
-    const pts = p.subs.filter((sb) => sb.ll && sb.map !== false).map((sb) => llToMap(sb.ll[0], sb.ll[1]));
+    if (!PLACES[pid]) return;
+    const pts = marks.filter((m) => m.place === pid && (!m.out || outShown.has(m.kind))).map((m) => [m.x, m.y]);
     const st = stopMark.get(pid);
     if (st) pts.push([st.x, st.y]);
     if (!pts.length) return;
@@ -3359,7 +3491,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (x1 - x0 < 2 * minHalf) { x0 = cx - minHalf; x1 = cx + minHalf; }
     if (y1 - y0 < 2 * minHalf) { y0 = cy - minHalf; y1 = cy + minHalf; }
     goManual();
-    flyTo(clampCam(fitBox([x0, y0, x1, y1], PLACE_UPP)));
+    focusPlace = pid;
+    flyTo(clampCam(fitBox([x0, y0, x1, y1])));
   }
   function openIdea(iid) { openSheet({ type: 'idea', id: iid, confirm: false }); }
   function openSpot(pid, i) {
@@ -3388,6 +3521,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const { W } = boxSize();
     const target = { cx: x, cy: y, w: W * 0.005 };
     if (!stacked.matches && !sheet.hidden) target.cx += ((sheet.offsetWidth + 10) / 2) * (target.w / W);
+    focusPlace = pid;
     flyTo(clampCam(target), () => pingSpot(pid, i, 3200));
   }
   function showPlaceSpots(pid) {
@@ -3404,6 +3538,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (y1 - y0 < 2 * minHalf) { y0 = cy - minHalf; y1 = cy + minHalf; }
     peekSheet();
     goManual();
+    focusPlace = pid;
     flyTo(clampCam(fitBox([x0, y0, x1, y1])));
   }
   function openForm(opts) {
@@ -3638,6 +3773,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     const { W } = boxSize();
     const target = { cx: x, cy: y, w: W * 0.004 };
     if (!stacked.matches && !sheet.hidden) target.cx += ((sheet.offsetWidth + 10) / 2) * (target.w / W);
+    focusPlace = pid;
     flyTo(clampCam(target), () => pingOut(pid, i, 3200));
   }
   function showOutsOnMap(pid) {
@@ -3651,6 +3787,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     if (y1 - y0 < 2 * minHalf) { y0 = cy - minHalf; y1 = cy + minHalf; }
     peekSheet();
     goManual();
+    focusPlace = pid;
     flyTo(clampCam(fitBox([x0, y0, x1, y1], OUT_HI * 0.9)));
   }
   function ideaView(iid) {
@@ -6067,7 +6204,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       g.addEventListener('click', (e) => { if (pick || suppressClick) return; e.stopPropagation(); openStay(a); });
       g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStay(a); } });
       spotLayer.append(g);
-      const m = makeMark(g, { x, y, lo: 0, hi: SPOT_HI, spot: true, stay: true });
+      const city = Object.keys(PLACES).find((k) => PLACES[k].name === a.ville) || Object.keys(PLACES).find((k) => (PLACES[k].days || []).some((d) => a.nuits.includes(d))) || '';
+      const m = makeMark(g, { x, y, lo: 0, hi: SPOT_HI, spot: true, stay: true, place: city, nx: 14 });
       marks.push(m);
       stayMarks.push(m);
     }
