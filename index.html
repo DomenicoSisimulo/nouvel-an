@@ -972,6 +972,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
 .grp-name small { margin-left: 2px; font: 600 12.5px/1 var(--f-body); color: var(--ink-3); }
 .grp-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; font-size: 14.5px; line-height: 1.4; }
 .grp-line .grp-sync { font-size: 14px; }
+.grp-line-t { flex: 1 1 200px; }
 .grp-live { flex: none; width: 10px; height: 10px; margin-right: 2px; border-radius: 50%; background: var(--red); animation: grp-live 1.6s ease-out infinite; }
 @keyframes grp-live { 0% { box-shadow: 0 0 0 0 rgb(200 36 27 / 0.55); } 100% { box-shadow: 0 0 0 9px rgb(200 36 27 / 0); } }
 .grp-news { list-style: none; display: grid; gap: 2px; margin: 0 -6px; padding: 0; }
@@ -3146,7 +3147,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   let photos = [];
   let ideasReadOnly = false;
   // the installed app's group (see "the group" below): off, who (linked, name not chosen yet) or on
-  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], positions: {}, folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false, feedAll: false };
+  const grp = { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], rq: [], positions: {}, folderUrl: '', syncedAt: 0, net: true, err: '', syncing: false, setup: null, more: false, showLink: false, leave: false, iosHint: false, feedAll: false };
   const canWriteIdeas = () => !!shared.db && shared.canWrite !== false && !ideasReadOnly;
   const canUpload = () => (SITE ? grp.state === 'on' : !!shared.assets && !!shared.db && shared.canWrite !== false);
   const names = new Map();
@@ -3960,25 +3961,19 @@ button.go { appearance: none; border: 0; cursor: pointer; }
         onclick: (ev) => { ev.stopPropagation(); sendReact(ph, mine === e ? '' : e); } }, h('span', { class: 'lb-re', text: e }), by.length ? h('b', { text: String(by.length) }) : null);
     }));
   }
-  async function sendReact(ph, e) {
+  // a reaction: shown at once, kept on the phone, sent now or when the network is back
+  function sendReact(ph, e) {
     if (grp.state !== 'on' || !grp.me) return;
-    const me = grp.me.id;
-    const before = grp.reacts[ph.id] ? Object.assign({}, grp.reacts[ph.id]) : null;
-    const r = Object.assign({}, before || {});
-    if (e) r[me] = { e, at: new Date().toISOString() }; else delete r[me];
-    if (Object.keys(r).length) grp.reacts[ph.id] = r; else delete grp.reacts[ph.id];
+    const at = new Date().toISOString();
+    grp.rq = grp.rq.filter((x) => x.id !== ph.id).concat({ id: ph.id, e, at });
+    lsSet(GRP_RQ, grp.rq);
+    overlayReacts();
+    saveState();
     renderLbReacts();
     renderData();
-    try {
-      await gcall('react', { member: me, id: ph.id, e });
-      saveState();
-    } catch (err) {
-      if (before) grp.reacts[ph.id] = before; else delete grp.reacts[ph.id];
-      renderLbReacts();
-      renderData();
-      const c = err && err.code;
-      toast(c === 'bad_request' ? 'Le script du groupe doit être mis à jour pour les réactions : README du dépôt, « Mettre à jour le script ».' : c === 'offline' || c === 'network' ? 'Pas de réseau : la réaction n’est pas partie.' : c === 'gone' ? 'Cette photo n’est plus dans l’album.' : grpErrText(c), 6000);
-    }
+    renderGroup();
+    if (navigator.onLine === false || !grp.net) toast('Réaction gardée sur le téléphone : elle part dès que le réseau revient.', 4000);
+    flushReacts();
   }
   let lbList = null;
   function openLightbox(id, list) {
@@ -4395,7 +4390,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   // The app talks to the group's script (mapbuild/groupe/Code.gs), installed once in a Google Drive and open to whoever has its address and
   // the group's code; both travel in the invitation link and stay on the phone. Photos go into a folder of that Drive, place by place; each
   // person keeps their own ticks and sees the others'. Offline, ticks and photos wait on the phone for the network.
-  const GRP_KEY = 'grp', GRP_STATE = 'grp-state', GRP_TQ = 'grp-tq', GRP_WAS = 'grp-was', GRP_FULL = 'grp-full';
+  const GRP_KEY = 'grp', GRP_STATE = 'grp-state', GRP_TQ = 'grp-tq', GRP_WAS = 'grp-was', GRP_FULL = 'grp-full', GRP_RQ = 'grp-rq';
   const PUBLIC_URL = "https://domenicosisimulo.github.io/nouvel-an/";
   const CODE_URL = "https://github.com/DomenicoSisimulo/nouvel-an/blob/main/groupe/Code.gs";
   const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
@@ -4600,7 +4595,14 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     stBusy = false;
     grp.syncing = false;
     renderGroup();
-    if (grp.state === 'on' && grp.net && grp.err !== 'forbidden') { flushTicks(); processQueue(); if (unsharePending) sendStop(); }
+    if (grp.state === 'on' && grp.net && grp.err !== 'forbidden') {
+      flushTicks();
+      processQueue();
+      flushReacts();
+      if (unsharePending) sendStop();
+      // a share started without network, or not sent for a while: my position now
+      if (sharing() && (!shareLast || Date.now() - shareLast.t > 60000)) sendPos(true);
+    }
     ensureThumbs();
     scheduleRefresh();
   }
@@ -4612,6 +4614,40 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     refreshTimer = setTimeout(() => refreshState(true), live ? 20000 : 40000);
   }
   function saveState() { lsSet(GRP_STATE, { members: grp.members, ticks: grp.ticks, photos: grp.photos, reacts: grp.reacts, rev: grp.rev || 0, folderUrl: grp.folderUrl, space: grp.space, at: grp.syncedAt || Date.now() }); }
+  // my reactions not sent yet (no network): shown as if sent, then sent in order when the network is back
+  function overlayReacts() {
+    if (!grp.me) return;
+    grp.rq.forEach((x) => {
+      const r = Object.assign({}, grp.reacts[x.id] || {});
+      if (x.e) r[grp.me.id] = { e: x.e, at: x.at }; else delete r[grp.me.id];
+      if (Object.keys(r).length) grp.reacts[x.id] = r; else delete grp.reacts[x.id];
+    });
+  }
+  let rqBusy = false;
+  async function flushReacts() {
+    if (rqBusy || grp.state !== 'on' || !grp.me || !grp.rq.length) return;
+    rqBusy = true;
+    try {
+      while (grp.rq.length) {
+        const x = grp.rq[0];
+        try {
+          await gcall('react', { member: grp.me.id, id: x.id, e: x.e });
+        } catch (err) {
+          const c = err && err.code;
+          if (c === 'offline' || c === 'network') { grp.net = false; break; }
+          if (c === 'bad_request') { toast('Le script du groupe doit être mis à jour pour les réactions : README du dépôt, « Mettre à jour le script ».', 7000); grp.rq = []; lsSet(GRP_RQ, null); break; }
+          // a photo deleted meanwhile: that reaction has nowhere to go; busy or a server error: later
+          if (c !== 'gone') { grpFail(err); break; }
+        }
+        grp.rq = grp.rq.filter((y) => y !== x);
+        lsSet(GRP_RQ, grp.rq.length ? grp.rq : null);
+      }
+    } finally {
+      rqBusy = false;
+      saveState();
+      renderGroup();
+    }
+  }
   // the album's changes since this phone's version: added, deleted, reactions
   function applyChanges(list) {
     const byId = new Map(grp.photos.map((p) => [p.id, p]));
@@ -4641,6 +4677,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     } else if (Array.isArray(st.changes)) applyChanges(st.changes);
     // a script from before the changes-only answers has no number: the whole album every time
     grp.rev = typeof st.rev === 'number' && st.rev >= 0 ? st.rev : 0;
+    overlayReacts();
     grp.folderUrl = typeof st.folderUrl === 'string' && /^https:\/\/drive\.google\.com\//.test(st.folderUrl) ? st.folderUrl : '';
     grp.space = st.space && +st.space.limit > 0 ? { used: +st.space.used || 0, limit: +st.space.limit } : null;
     grp.positions = cleanPositions(st.positions);
@@ -5017,9 +5054,9 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function grpStatus() {
     if (grp.err === 'forbidden') return grpErrText('forbidden');
-    const nt = grp.tq.length, np = grp.pending.length;
+    const nt = grp.tq.length, np = grp.pending.length, nr = grp.rq.length;
     const parts = [];
-    if (!grp.net) parts.push('Hors ligne' + (nt || np ? ' : envoi dès que le réseau revient' : (grp.syncedAt ? ' : infos de ' + hhmm(grp.syncedAt) : '')));
+    if (!grp.net) parts.push('Hors ligne' + (nt || np || nr ? ' : envoi dès que le réseau revient' : (grp.syncedAt ? ' : infos de ' + hhmm(grp.syncedAt) : '')));
     else if (grp.syncing) parts.push('Mise à jour…');
     else if (grp.err) parts.push(grpErrText(grp.err));
     else if (grp.syncedAt) parts.push('À jour à ' + hhmm(grp.syncedAt));
@@ -5034,6 +5071,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       parts.push(np + (np > 1 ? ' fichiers' : ' fichier') + (held === 'pause' ? (np > 1 ? ' gardés' : ' gardé') + ', envois en pause' : held === 'wifi' ? (np > 1 ? ' attendent' : ' attend') + ' le wifi' : ' en attente'));
     }
     if (nt) parts.push(nt + (nt > 1 ? ' cases à envoyer' : ' case à envoyer'));
+    if (nr) parts.push(nr + (nr > 1 ? ' réactions à envoyer' : ' réaction à envoyer'));
     return parts.join(' · ');
   }
   function grpInput(attrs) {
@@ -5365,7 +5403,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
     return h('div', { class: 'grp-part' },
       h('p', { class: 'grp-sub', text: 'Positions' }),
       sharing()
-        ? h('p', { class: 'grp-line' }, h('span', { class: 'grp-live', 'aria-hidden': 'true' }), 'Tu partages ta position, encore ' + left + ' min. ',
+        ? h('p', { class: 'grp-line' }, h('span', { class: 'grp-live', 'aria-hidden': 'true' }), h('span', { class: 'grp-line-t', text: 'Tu partages ta position, encore ' + left + ' min' + (grp.net ? '.' : ', envoyée dès que le réseau revient.') }),
           h('button', { type: 'button', class: 'grp-sync', onclick: () => stopShare(false) }, 'Arrêter'), ' · ', h('button', { type: 'button', class: 'grp-sync', onclick: () => startShare(true) }, 'Encore 30 min'))
         : h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn', onclick: () => startShare() }, pinIcon(), 'Partager ma position 30 min')),
       others.length
@@ -5728,6 +5766,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       grp.reacts = {};
       grp.rev = 0;
       grp.tq = [];
+      grp.rq = [];
+      lsSet(GRP_RQ, null);
       if (grp.url) { grp.pending = []; gdb.clear('q').catch(() => {}); }
       lsSet(GRP_TQ, null);
       lsSet(GRP_STATE, null);
@@ -5789,6 +5829,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function grpNotMe() {
     if (sharing()) stopShare(true);
+    grp.rq = [];
+    lsSet(GRP_RQ, null);
     grp.me = null;
     grp.state = 'who';
     grp.more = false;
@@ -5801,8 +5843,8 @@ button.go { appearance: none; border: 0; cursor: pointer; }
   }
   function grpLeave() {
     if (sharing()) stopShare(true);
-    Object.assign(grp, { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], folderUrl: '', syncedAt: 0, err: '', more: false, leave: false, showLink: false, setup: null, iosHint: false });
-    [GRP_KEY, GRP_STATE, GRP_TQ, GRP_WAS, GRP_FULL, GRP_SEEN, GRP_SHARE, GRP_UNSHARE].forEach((k) => lsSet(k, null));
+    Object.assign(grp, { url: '', code: '', me: null, state: 'off', members: [], ticks: {}, photos: [], reacts: {}, rev: 0, pending: [], tq: [], rq: [], folderUrl: '', syncedAt: 0, err: '', more: false, leave: false, showLink: false, setup: null, iosHint: false });
+    [GRP_KEY, GRP_STATE, GRP_TQ, GRP_RQ, GRP_WAS, GRP_FULL, GRP_SEEN, GRP_SHARE, GRP_UNSHARE].forEach((k) => lsSet(k, null));
     unsharePending = false;
     renderFriends();
     renderShareBtn();
@@ -5847,6 +5889,7 @@ button.go { appearance: none; border: 0; cursor: pointer; }
       grp.me = cfg.me && typeof cfg.me.id === 'string' ? { id: cfg.me.id, name: String(cfg.me.name || '').slice(0, 24) } : null;
       grp.state = grp.me ? 'on' : 'who';
       grp.tq = (lsGet(GRP_TQ, []) || []).filter((x) => x && typeof x.item === 'string' && ckBoxes.has(x.item));
+      grp.rq = (lsGet(GRP_RQ, []) || []).filter((x) => x && fileId(x.id) && (x.e === '' || REACTS.includes(x.e)) && typeof x.at === 'string');
       const cached = lsGet(GRP_STATE, null);
       if (cached && typeof cached === 'object') { applyState(cached); grp.syncedAt = +cached.at || 0; }
     }
